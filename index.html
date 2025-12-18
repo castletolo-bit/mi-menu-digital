@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Digital Seguro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 pb-24">
+
+    <header class="bg-orange-500 text-white p-6 text-center shadow-lg">
+        <h1 id="nombreNegocio" class="text-2xl font-bold italic">Cargando Menú...</h1>
+        <p class="text-sm">Selecciona tus opciones y pide por WhatsApp</p>
+    </header>
+
+    <main id="menu-container" class="p-4 space-y-4">
+        </main>
+
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t flex justify-between items-center">
+        <div>
+            <p class="text-gray-500 text-xs">Total a pagar:</p>
+            <p id="total-display" class="text-xl font-bold text-orange-600">$0.00</p>
+        </div>
+        <button onclick="enviarWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all">
+            Pedir por WhatsApp
+        </button>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN (Aquí pegas el link de tu Google Sheet publicado como CSV)
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQBENNz-awzr5fmMUjdlGUBHr1EYFlGGXtDEKRuOQT_iXmU8f9zf4z2OMG9TLiQBO2KLHRLpgoqti0z/pub?output=csv';
+        const TELEFONO_NEGOCIO = '5215648538421'; // Formato internacional sin símbolos
+
+        let carrito = [];
+        let total = 0;
+
+        async function cargarMenu() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const data = await response.text();
+                const filas = data.split('\n').slice(1); // Quitamos el encabezado
+                
+                const container = document.getElementById('menu-container');
+                document.getElementById('nombreNegocio').innerText = "Menú de Hoy";
+
+                filas.forEach(fila => {
+                    const columnas = fila.split(',');
+                    if(columnas.length < 5) return;
+
+                    const [id, cat, nombre, desc, precio, estado] = columnas;
+                    if(estado.trim().toLowerCase() === 'agotado') return;
+
+                    const card = `
+                        <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-orange-400">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-gray-800">${nombre}</h3>
+                                <p class="text-gray-500 text-xs">${desc}</p>
+                                <p class="text-orange-600 font-bold mt-1">$${precio}</p>
+                            </div>
+                            <button onclick="agregar('${nombre}', ${precio})" class="bg-orange-100 text-orange-600 p-2 rounded-full font-bold w-10 h-10 hover:bg-orange-500 hover:text-white transition-colors">
+                                +
+                            </button>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            } catch (e) {
+                console.error("Error cargando el menú", e);
+            }
+        }
+
+        function agregar(nombre, precio) {
+            carrito.push({ nombre, precio });
+            total += parseFloat(precio);
+            document.getElementById('total-display').innerText = `$${total.toFixed(2)}`;
+            // Feedback visual simple
+            alert(`Agregado: ${nombre}`);
+        }
+
+        function enviarWhatsApp() {
+            if (carrito.length === 0) {
+                alert("El carrito está vacío");
+                return;
+            }
+
+            let mensaje = `*NUEVO PEDIDO*%0A--------------------------%0A`;
+            carrito.forEach(item => {
+                mensaje += `• ${item.nombre} - $${item.precio}%0A`;
+            });
+            mensaje += `--------------------------%0A*TOTAL: $${total.toFixed(2)}*%0A%0A¿Pueden confirmar mi pedido?`;
+
+            // El número de teléfono nunca se muestra en la pantalla del usuario
+            const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
+            window.location.href = url;
+        }
+
+        cargarMenu();
+    </script>
+</body>
+</html>
