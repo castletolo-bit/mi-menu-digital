@@ -77,23 +77,32 @@
             alert(`Agregado: ${nombre}`);
         }
 
-        function enviarWhatsApp() {
-            if (carrito.length === 0) {
-                alert("El carrito está vacío");
-                return;
-            }
+// ... (Todo lo anterior se mantiene igual hasta la función enviarWhatsApp)
 
-            let mensaje = `*NUEVO PEDIDO*%0A--------------------------%0A`;
-            carrito.forEach(item => {
-                mensaje += `• ${item.nombre} - $${item.precio}%0A`;
-            });
-            mensaje += `--------------------------%0A*TOTAL: $${total.toFixed(2)}*%0A%0A¿Pueden confirmar mi pedido?`;
+function enviarWhatsApp() {
+    if (carrito.length === 0) {
+        alert("El carrito está vacío");
+        return;
+    }
 
-            // El número de teléfono nunca se muestra en la pantalla del usuario
-            const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
-            window.location.href = url;
-        }
+    // Generamos un Folio único sencillo (Hora+Minuto+Segundo)
+    const ahora = new Date();
+    const folio = ahora.getHours().toString() + ahora.getMinutes().toString() + ahora.getSeconds().toString();
 
+    let mensaje = `*PEDIDO #ID-${folio}*%0A`;
+    mensaje += `--------------------------%0A`;
+    
+    carrito.forEach(item => {
+        mensaje += `• ${item.nombre} - $${item.precio}%0A`;
+    });
+    
+    mensaje += `--------------------------%0A`;
+    mensaje += `*TOTAL A PAGAR: $${total.toFixed(2)}*%0A%0A`;
+    mensaje += `_Enviado desde el Menú Digital_`;
+
+    const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
+    window.location.href = url;
+}
         cargarMenu();
     </script>
 </body>
