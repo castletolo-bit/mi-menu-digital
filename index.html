@@ -3,61 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menú Digital Seguro</title>
+    <title>Menú Digital - Pedido Seguro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .product-card { transition: transform 0.2s; }
+        .product-card:active { transform: scale(0.95); }
+    </style>
 </head>
-<body class="bg-gray-100 pb-24">
+<body class="bg-gray-50 pb-32">
 
-    <header class="bg-orange-500 text-white p-6 text-center shadow-lg">
-        <h1 id="nombreNegocio" class="text-2xl font-bold italic">Cargando Menú...</h1>
-        <p class="text-sm">Selecciona tus opciones y pide por WhatsApp</p>
+    <header class="bg-gradient-to-r from-orange-500 to-red-600 text-white p-6 text-center shadow-lg">
+        <h1 class="text-3xl font-extrabold italic">Nuestro Menú</h1>
+        <p class="text-sm opacity-90">Viernes, Sábados y Domingos</p>
     </header>
 
-    <main id="menu-container" class="p-4 space-y-4">
-        </main>
+    <main id="menu-container" class="p-4 max-w-md mx-auto space-y-4">
+        <p class="text-center text-gray-500 animate-pulse">Cargando delicias...</p>
+    </main>
 
-    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-2xl border-t flex justify-between items-center">
+    <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] border-t flex justify-between items-center z-50">
         <div>
-            <p class="text-gray-500 text-xs">Total a pagar:</p>
-            <p id="total-display" class="text-xl font-bold text-orange-600">$0.00</p>
+            <p class="text-gray-400 text-xs uppercase font-bold tracking-widest">Total</p>
+            <p id="total-display" class="text-2xl font-black text-orange-600">$0.00</p>
         </div>
-        <button onclick="enviarWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all">
-            Pedir por WhatsApp
+        <button onclick="enviarWhatsApp()" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-2xl font-bold shadow-lg flex items-center gap-2 transition-all">
+            <span>Pedir por WhatsApp</span>
         </button>
     </div>
 
     <script>
-        // CONFIGURACIÓN (Aquí pegas el link de tu Google Sheet publicado como CSV)
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQBENNz-awzr5fmMUjdlGUBHr1EYFlGGXtDEKRuOQT_iXmU8f9zf4z2OMG9TLiQBO2KLHRLpgoqti0z/pub?output=csv';
-        const TELEFONO_NEGOCIO = '5215648538421'; // Formato internacional sin símbolos
+        // ==========================================
+        // CONFIGURACIÓN (RELLENA ESTOS DATOS)
+        // ==========================================
+        const SHEET_CSV_URL = 'TU_LINK_DE_GOOGLE_SHEETS_AQUI'; 
+        const TELEFONO_NEGOCIO = '521XXXXXXXXXX'; // Número sin símbolos (+), solo números.
 
         let carrito = [];
         let total = 0;
 
+        // Función para cargar los datos desde Google Sheets
         async function cargarMenu() {
             try {
                 const response = await fetch(SHEET_CSV_URL);
                 const data = await response.text();
-                const filas = data.split('\n').slice(1); // Quitamos el encabezado
+                const filas = data.split('\n').slice(1); 
                 
                 const container = document.getElementById('menu-container');
-                document.getElementById('nombreNegocio').innerText = "Menú de Hoy";
+                container.innerHTML = ""; // Limpiar mensaje de carga
 
                 filas.forEach(fila => {
-                    const columnas = fila.split(',');
+                    // Limpiamos la fila de caracteres raros
+                    const columnas = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     if(columnas.length < 5) return;
 
-                    const [id, cat, nombre, desc, precio, estado] = columnas;
-                    if(estado.trim().toLowerCase() === 'agotado') return;
+                    const [id, cat, nombre, desc, precio, estado] = columnas.map(c => c.replace(/"/g, '').trim());
+                    
+                    if(estado.toLowerCase() === 'agotado') return;
 
                     const card = `
-                        <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center border-l-4 border-orange-400">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-gray-800">${nombre}</h3>
-                                <p class="text-gray-500 text-xs">${desc}</p>
-                                <p class="text-orange-600 font-bold mt-1">$${precio}</p>
+                        <div class="product-card bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                            <div class="flex-1 pr-4">
+                                <span class="text-[10px] uppercase font-bold text-orange-400">${cat}</span>
+                                <h3 class="font-bold text-gray-800 text-lg">${nombre}</h3>
+                                <p class="text-gray-500 text-xs leading-tight">${desc}</p>
+                                <p class="text-gray-900 font-black mt-2 text-md">$${precio}</p>
                             </div>
-                            <button onclick="agregar('${nombre}', ${precio})" class="bg-orange-100 text-orange-600 p-2 rounded-full font-bold w-10 h-10 hover:bg-orange-500 hover:text-white transition-colors">
+                            <button onclick="agregar('${nombre}', ${precio})" class="bg-orange-500 text-white w-12 h-12 rounded-xl font-bold text-xl shadow-md active:bg-orange-700">
                                 +
                             </button>
                         </div>
@@ -65,7 +76,7 @@
                     container.innerHTML += card;
                 });
             } catch (e) {
-                console.error("Error cargando el menú", e);
+                document.getElementById('menu-container').innerHTML = "<p class='text-red-500 text-center'>Error al conectar con el menú. Verifica el link de Sheets.</p>";
             }
         }
 
@@ -73,36 +84,42 @@
             carrito.push({ nombre, precio });
             total += parseFloat(precio);
             document.getElementById('total-display').innerText = `$${total.toFixed(2)}`;
-            // Feedback visual simple
-            alert(`Agregado: ${nombre}`);
+            
+            // Efecto sutil para confirmar que se agregó
+            console.log("Agregado: " + nombre);
         }
 
-// ... (Todo lo anterior se mantiene igual hasta la función enviarWhatsApp)
+        function enviarWhatsApp() {
+            if (carrito.length === 0) {
+                alert("Por favor, selecciona al menos un producto.");
+                return;
+            }
 
-function enviarWhatsApp() {
-    if (carrito.length === 0) {
-        alert("El carrito está vacío");
-        return;
-    }
+            // Generar Folio único (HHMMSS)
+            const ahora = new Date();
+            const folio = ahora.getHours().toString().padStart(2, '0') + 
+                          ahora.getMinutes().toString().padStart(2, '0') + 
+                          ahora.getSeconds().toString().padStart(2, '0');
 
-    // Generamos un Folio único sencillo (Hora+Minuto+Segundo)
-    const ahora = new Date();
-    const folio = ahora.getHours().toString() + ahora.getMinutes().toString() + ahora.getSeconds().toString();
+            // --- CONSTRUCCIÓN DEL TICKET ---
+            let mensaje = `*📦 NUEVO PEDIDO #ID-${folio}*%0A`;
+            mensaje += `_Fecha: ${ahora.toLocaleDateString()}_%0A`;
+            mensaje += `------------------------------%0A`;
+            
+            carrito.forEach(item => {
+                mensaje += `✅ ${item.nombre} - *$${item.precio}*%0A`;
+            });
+            
+            mensaje += `------------------------------%0A`;
+            mensaje += `*TOTAL A PAGAR: $${total.toFixed(2)}*%0A%0A`;
+            mensaje += `📍 _Por favor, confírmenme para enviar mi ubicación y confirmar el pedido._`;
 
-    let mensaje = `*PEDIDO #ID-${folio}*%0A`;
-    mensaje += `--------------------------%0A`;
-    
-    carrito.forEach(item => {
-        mensaje += `• ${item.nombre} - $${item.precio}%0A`;
-    });
-    
-    mensaje += `--------------------------%0A`;
-    mensaje += `*TOTAL A PAGAR: $${total.toFixed(2)}*%0A%0A`;
-    mensaje += `_Enviado desde el Menú Digital_`;
+            // Ejecutar envío
+            const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
+            window.location.href = url;
+        }
 
-    const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
-    window.location.href = url;
-}
+        // Ejecutar carga al abrir la página
         cargarMenu();
     </script>
 </body>
