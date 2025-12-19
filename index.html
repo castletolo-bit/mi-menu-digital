@@ -89,35 +89,40 @@
             console.log("Agregado: " + nombre);
         }
 
-        function enviarWhatsApp() {
-            if (carrito.length === 0) {
-                alert("Por favor, selecciona al menos un producto.");
-                return;
-            }
+function enviarWhatsApp() {
+    if (carrito.length === 0) {
+        alert("¡Tu carrito está vacío! Selecciona algunos productos primero.");
+        return;
+    }
 
-            // Generar Folio único (HHMMSS)
-            const ahora = new Date();
-            const folio = ahora.getHours().toString().padStart(2, '0') + 
-                          ahora.getMinutes().toString().padStart(2, '0') + 
-                          ahora.getSeconds().toString().padStart(2, '0');
+    // 1. Generar Folio y Fecha
+    const ahora = new Date();
+    const folio = ahora.getHours().toString().padStart(2, '0') + 
+                  ahora.getMinutes().toString().padStart(2, '0') + 
+                  ahora.getSeconds().toString().padStart(2, '0');
 
-            // --- CONSTRUCCIÓN DEL TICKET ---
-            let mensaje = `*📦 NUEVO PEDIDO #ID-${folio}*%0A`;
-            mensaje += `_Fecha: ${ahora.toLocaleDateString()}_%0A`;
-            mensaje += `------------------------------%0A`;
-            
-            carrito.forEach(item => {
-                mensaje += `✅ ${item.nombre} - *$${item.precio}*%0A`;
-            });
-            
-            mensaje += `------------------------------%0A`;
-            mensaje += `*TOTAL A PAGAR: $${total.toFixed(2)}*%0A%0A`;
-            mensaje += `📍 _Por favor, confírmenme para enviar mi ubicación y confirmar el pedido._`;
+    // 2. Construir el texto del Ticket de forma limpia
+    let textoTicket = `*📦 NUEVO PEDIDO #ID-${folio}*\n`;
+    textoTicket += `_Fecha: ${ahora.toLocaleDateString()}_\n`;
+    textoTicket += `------------------------------\n`;
+    
+    carrito.forEach(item => {
+        textoTicket += `✅ ${item.nombre} - $${item.precio}\n`;
+    });
+    
+    textoTicket += `------------------------------\n`;
+    textoTicket += `*TOTAL A PAGAR: $${total.toFixed(2)}*\n\n`;
+    textoTicket += `📍 _Por favor, confírmenme para enviar mi ubicación._`;
 
-            // Ejecutar envío
-            const url = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensaje}`;
-            window.location.href = url;
-        }
+    // 3. LA CLAVE: Codificar el texto para que WhatsApp lo lea completo
+    const mensajeCodificado = encodeURIComponent(textoTicket);
+
+    // 4. Construir URL Final
+    const urlFinal = `https://wa.me/${TELEFONO_NEGOCIO}?text=${mensajeCodificado}`;
+
+    // 5. Ejecutar envío (usamos _top para asegurar que abra en el celular)
+    window.open(urlFinal, '_top');
+}
 
         // Ejecutar carga al abrir la página
         cargarMenu();
