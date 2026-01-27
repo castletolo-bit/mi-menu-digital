@@ -1,157 +1,79 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>La Gusguería</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .product-card { transition: transform 0.2s; }
-    .product-card:active { transform: scale(0.98); }
-    .btn-add { transition: all 0.2s; }
-  </style>
-</head>
-<body class="bg-gray-50 pb-32">
+<html lang="es"> 
+  <head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>La Gusguería - Menú Digital</title> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> 
+    <style> body { font-family: 'Montserrat', sans-serif; } .product-card { transition: all 0.2s ease-in-out; } .product-card:active { transform: scale(0.96); } .img-container { position: relative; overflow: hidden; } .img-container img { transition: transform 0.5s; } @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } } .animate-bump { animation: bounce 0.3s ease-in-out; } 
+    </style> 
+  </head> 
+  <body class="bg-gray-50 pb-32"> 
+    <header class="bg-gradient-to-br from-orange-600 to-red-700 text-white p-8 text-center shadow-2xl rounded-b-[3rem] sticky top-0 z-40"> 
+      <h1 class="text-4xl font-black uppercase">La Gusguería</h1> 
+      <p class="text-sm opacity-90 mt-2 italic font-bold">PARA APAGAR LA SED DE LA MALA</p> 
+    </header>
+    <main id="menu-container" class="p-4 max-w-lg mx-auto space-y-4 mt-4">
+      <div class="text-center py-20"><p>Cargando el menú...</p></div>
+    </main>
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-5 shadow-2xl border-t flex justify-between items-center z-50 rounded-t-3xl max-w-2xl mx-auto">
+        <div class="flex flex-col">
+            <span class="text-gray-400 text-[10px] uppercase font-black">Total</span>
+            <span id="total-display" class="text-3xl font-black text-gray-900">$0.00</span>
+        </div>
+        <button onclick="enviarWhatsApp()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm">Pedir por WhatsApp</button>
+    </nav>
 
-  <!-- Encabezado -->
-  <header class="bg-gradient-to-br from-orange-600 to-red-600 text-white p-6 text-center shadow-lg rounded-b-3xl">
-    <h1 class="text-3xl font-extrabold tracking-tight">La Gusguería</h1>
-    <p class="text-sm opacity-90 mt-1">¡Pide rápido antes de que se acaben!</p>
-  </header>
+<script>
+    const SHEET_CSV_URL = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)'; 
+    const SECURITY_HASH = "NTIxNTYzOTQ3NTQ3OA=="; 
+    let carrito = []; let total = 0;
+    const _extract = (h) => atob(h);
 
-  <!-- Contenedor del menú -->
-  <main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 mt-2">
-    <div class="text-center py-10">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-      <p class="text-gray-400 mt-4 text-sm">Cargando el menú...</p>
-    </div>
-  </main>
-
-  <!-- Footer carrito -->
-  <div class="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] border-t border-gray-100 flex justify-between items-center z-50">
-    <div class="flex flex-col">
-      <span class="text-gray-400 text-[10px] uppercase font-bold tracking-widest">Total Estimado</span>
-      <span id="total-display" class="text-2xl font-black text-gray-800">$0.00</span>
-    </div>
-    <button onclick="enviarWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-green-200 flex items-center gap-2 transform active:scale-95 transition-all">
-      Pedir por WhatsApp
-    </button>
-  </div>
-
-  <script>
-    // ==========================================
-    // CONFIGURACIÓN
-    // ==========================================
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv'; 
-    const TELEFONO_BASE64 = "NTIxNTYzOTQ3NTQ3OA=="; // 521XXXXXX5478 Teléfono Héctor
-
-    let carrito = [];
-    let total = 0;
-
-    // Decodificar Base64
-    function decodeBase64(str) {
-      try { return atob(str); } catch (e) { return ""; }
-    }
-
-    // ==========================================
-    // CARGAR MENÚ
-    // ==========================================
     async function cargarMenu() {
-      try {
-        const response = await fetch(SHEET_CSV_URL + '&cache=' + new Date().getTime());
-        const data = await response.text();
-        const filas = data.split('\n').slice(1);
-
-        const container = document.getElementById('menu-container');
-        container.innerHTML = "";
-
-        filas.forEach(fila => {
-          const columnas = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
-          if (columnas.length < 10) return;
-
-          const [id, categoria, nombre, descES, precioRaw, estadoRaw, imagenURL, etiqueta, tooltip, descEN] = columnas;
-          const isAgotado = estadoRaw.toLowerCase() === 'agotado';
-          const precio = parseFloat(precioRaw) || 0;
-
-          let estadoBadge = '';
-          let botonHtml = '';
-
-          if (isAgotado) {
-            estadoBadge = `<span class="text-red-600 font-black text-sm bg-red-50 px-2 py-1 rounded">AGOTADO</span>`;
-            botonHtml = `<button disabled class="bg-gray-200 text-gray-400 w-12 h-12 rounded-xl cursor-not-allowed">x</button>`;
-          } else {
-            estadoBadge = etiqueta ? `<span class="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded">${etiqueta}</span>` : '';
-            botonHtml = `<button onclick="agregar('${nombre}', ${precio})" class="btn-add bg-orange-100 text-orange-600 w-12 h-12 rounded-xl font-bold text-2xl hover:bg-orange-500 hover:text-white">+</button>`;
-          }
-
-          const card = `
-            <div class="product-card p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 mb-3 bg-white ${isAgotado ? 'opacity-60 grayscale' : ''}">
-              <img src="${imagenURL}" alt="${nombre}" class="w-20 h-20 object-cover rounded-xl shadow-sm" />
-              <div class="flex-1">
-                <span class="text-[10px] uppercase font-bold text-orange-400 tracking-wider">${categoria}</span>
-                <h3 class="font-bold text-gray-800 text-lg mb-1">${nombre}</h3>
-                <p class="text-gray-500 text-xs">${descES}</p>
-                ${estadoBadge}
-                <p class="text-gray-900 font-black mt-2 text-lg">$${precio}</p>
-              </div>
-              <div class="flex flex-col items-center gap-2">
-                ${botonHtml}
-                ${tooltip ? `<span class="text-gray-400 text-xs cursor-help" title="${tooltip}">ℹ️</span>` : ''}
-              </div>
-            </div>
-          `;
-          container.innerHTML += card;
-        });
-      } catch (e) {
-        document.getElementById('menu-container').innerHTML =
-          "<div class='p-4 bg-red-100 text-red-700 rounded-xl text-center'>Error de conexión. Revisa el link de Google Sheets.</div>";
-      }
+        try {
+            const response = await fetch(SHEET_CSV_URL + '&t=' + Date.now());
+            const csvData = await response.text();
+            const filas = csvData.split('\n').slice(1);
+            const container = document.getElementById('menu-container');
+            container.innerHTML = "";
+            filas.forEach(fila => {
+                const col = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                if (col.length < 6) return;
+                const isAgotado = col[5] && col[5].toLowerCase() === 'agotado';
+                const precio = parseFloat(col[4]) || 0;
+                const img = col[6] || "[https://via.placeholder.com/300?text=Antojo](https://via.placeholder.com/300?text=Antojo)";
+                container.innerHTML += `
+                    <div class="product-card p-3 rounded-[2rem] bg-white border flex gap-4 ${isAgotado ? 'opacity-50 grayscale' : 'shadow-md'}">
+                        <div class="w-24 h-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100">
+                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=La+Gusgueria](https://via.placeholder.com/300?text=La+Gusgueria)'">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div><h3 class="font-bold text-gray-800">${col[2]}</h3><p class="text-[10px] text-gray-400">${col[3]}</p></div>
+                            <div class="flex justify-between items-center"><span class="font-black">$${precio.toFixed(2)}</span>
+                            ${isAgotado ? '' : `<button onclick="agregar('${col[2].replace(/'/g,"")}',${precio})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-bold">+</button>`}</div>
+                        </div>
+                    </div>`;
+            });
+        } catch (e) { console.error(e); }
     }
 
-    // ==========================================
-    // CARRITO
-    // ==========================================
-    function agregar(nombre, precio) {
-      carrito.push({ nombre, precio });
-      total += precio;
-      actualizarTotal();
-      if (navigator.vibrate) navigator.vibrate(50);
-    }
-
-    function actualizarTotal() {
-      document.getElementById('total-display').innerText = `$${total.toFixed(2)}`;
+    function agregar(n, p) {
+        carrito.push({n, p}); total += p;
+        const d = document.getElementById('total-display');
+        d.innerText = '$' + total.toFixed(2);
+        d.classList.add('animate-bump'); setTimeout(() => d.classList.remove('animate-bump'), 300);
     }
 
     function enviarWhatsApp() {
-      if (carrito.length === 0) {
-        alert("🛒 Tu carrito está vacío. Agrega algo rico primero.");
-        return;
-      }
-
-      const ahora = new Date();
-      const folio = ahora.getHours() + "" + ahora.getMinutes() + "" + ahora.getSeconds();
-
-      let texto = `*📝 PEDIDO #${folio}*\n`;
-      texto += `_Fecha: ${ahora.toLocaleDateString()}_\n`;
-      texto += `--------------------------------\n`;
-
-      carrito.forEach(item => {
-        texto += `▪️ ${item.nombre} .. $${item.precio}\n`;
-      });
-
-      texto += `--------------------------------\n`;
-      texto += `*💰 TOTAL: $${total.toFixed(2)}*\n\n`;
-      texto += `📍 _Confirmo mi pedido, espero instrucciones._`;
-
-      const mensajeFinal = encodeURIComponent(texto);
-      const telefono = decodeBase64(TELEFONO_BASE64);
-      const url = `https://wa.me/${telefono}?text=${mensajeFinal}`;
-
-      window.open(url, "_top");
+        if (carrito.length === 0) return alert("¡Carrito vacío!");
+        let m = `*📝 PEDIDO - LA GUSGUERÍA*\n`;
+        carrito.forEach(i => m += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
+        m += `*TOTAL: $${total.toFixed(2)}*`;
+        window.open(`https://wa.me/${_extract(SECURITY_HASH)}?text=${encodeURIComponent(m)}`, "_top");
     }
-
-    // Iniciar
     cargarMenu();
-  </script>
-</body>
+</script>
+</body> 
 </html>
