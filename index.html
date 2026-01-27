@@ -1,182 +1,151 @@
 <!DOCTYPE html>
 
-<html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>La Gusguería - Menú Pro</title> <script src="https://cdn.tailwindcss.com"></script> <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> <style> body { font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; overflow-x: hidden; } .product-card { transition: all 0.2s ease; } .product-card:active { transform: scale(0.97); }
+<html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>La Gusguería - Menú Digital</title> <script src="https://cdn.tailwindcss.com"></script> <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> <style> body { font-family: 'Montserrat', sans-serif; background-color: #f8fafc; color: #1e293b; } .product-card { transition: transform 0.2s; border-radius: 2rem; background: white; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); } .product-card:active { transform: scale(0.95); } .img-box { position: relative; width: 6.5rem; height: 6.5rem; flex-shrink: 0; border-radius: 1.5rem; background: #f1f5f9; cursor: help; overflow: hidden; }
 
-    #custom-tooltip {
+    #tooltip {
         position: fixed;
         display: none;
-        z-index: 9999;
-        background: #1e293b;
-        color: #f8fafc;
+        z-index: 10000;
+        background: #0f172a;
+        color: white;
         padding: 12px;
         border-radius: 12px;
         font-size: 12px;
-        font-weight: 500;
-        max-width: 220px;
+        max-width: 200px;
         pointer-events: none;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        border: 1px solid #334155;
-        line-height: 1.4;
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
     }
-
-    .img-box { 
-        position: relative; 
-        width: 6.5rem; 
-        height: 6.5rem; 
-        flex-shrink: 0; 
-        border-radius: 1.5rem;
-        background: #f1f5f9;
-        cursor: help;
-    }
-
-    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-    .animate-pop { animation: bounce 0.3s ease-out; }
 </style>
-</head> <body class="bg-slate-50 pb-40">
+</head> <body class="pb-40">
 
-<div id="custom-tooltip"></div>
+<div id="tooltip"></div>
 
-<header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-10 text-center shadow-xl rounded-b-[3.5rem] sticky top-0 z-40">
+<header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-10 text-center rounded-b-[3.5rem] shadow-xl sticky top-0 z-50">
     <h1 class="text-4xl font-black uppercase tracking-tighter italic">La Gusguería</h1>
-    <p class="text-[10px] font-bold tracking-[0.3em] opacity-90 mt-2 uppercase">Para apagar la sed de la mala</p>
+    <p class="text-[10px] font-bold tracking-[0.2em] opacity-90 mt-2">PARA APAGAR LA SED DE LA MALA</p>
 </header>
 
-<main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 mt-4">
-    <div id="loading-state" class="text-center py-20 text-slate-400 font-bold italic animate-pulse">
-        Preparando el antojo...
-    </div>
-</main>
+<div id="status-msg" class="max-w-md mx-auto mt-10 p-4 text-center">
+    <div class="animate-pulse text-slate-400 font-bold">Iniciando el menú...</div>
+</div>
 
-<footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] border-t flex justify-between items-center z-50 rounded-t-[2.5rem] max-w-2xl mx-auto">
-    <div class="flex flex-col">
-        <span class="text-slate-400 text-[10px] uppercase font-black tracking-widest">Tu Total</span>
-        <span id="total-display" class="text-3xl font-black text-slate-900 tracking-tighter">$0.00</span>
+<main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 hidden"></main>
+
+<footer class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-6 border-t z-50 rounded-t-[2.5rem] flex justify-between items-center max-w-2xl mx-auto shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+    <div>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total</p>
+        <p id="total-val" class="text-3xl font-black text-slate-900">$0.00</p>
     </div>
-    <button onclick="enviarWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-95 transition-all">
+    <button onclick="sendOrder()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs active:scale-95 transition-all shadow-lg shadow-green-100">
         Pedir WhatsApp
     </button>
 </footer>
 
 <script>
     const CSV_URL = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)';
-    const HASH_TEL = "NTIxNTYzOTQ3NTQ3OA=="; 
-
-    let carrito = [];
+    const TEL_B64 = "NTIxNTYzOTQ3NTQ3OA=="; 
+    
+    let cart = [];
     let total = 0;
-    const tooltip = document.getElementById('custom-tooltip');
+    const tip = document.getElementById('tooltip');
 
-    async function cargarMenu() {
+    async function loadMenu() {
+        const status = document.getElementById('status-msg');
+        const container = document.getElementById('menu-container');
+
         try {
-            const res = await fetch(CSV_URL + '&cache=' + Date.now());
-            if (!res.ok) throw new Error("No se pudo obtener el CSV");
+            const response = await fetch(CSV_URL + '&cb=' + Date.now());
+            if (!response.ok) throw new Error("No se pudo leer la base de datos");
             
-            const csvText = await res.text();
-            // Limpieza de líneas vacías
-            const filas = csvText.split(/\r?\n/).filter(line => line.trim() !== "").slice(1);
-            const container = document.getElementById('menu-container');
+            const text = await response.text();
+            const lines = text.split(/\r?\n/).filter(l => l.trim() !== "").slice(1);
+            
+            if (lines.length === 0) {
+                status.innerHTML = "No hay productos en el menú.";
+                return;
+            }
+
             container.innerHTML = "";
-
-            filas.forEach((f, index) => {
-                // Regex robusto para CSV con comas dentro de comillas
-                const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/^"|"$/g, '').trim());
+            lines.forEach(line => {
+                // Regex para separar por comas ignorando las que están dentro de comillas
+                const col = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
                 
-                // Estructura: 0:ID, 1:Categoria, 2:Nombre, 3:Desc_ES, 4:Precio, 5:Estado, 6:ImagenURL, 7:Etiqueta, 8:Tooltip
-                if (c.length < 5) return;
+                // 0:ID, 1:Cat, 2:Nombre, 3:Desc, 4:Precio, 5:Estado, 6:ImagenURL, 7:Etiqueta, 8:Tooltip
+                if (col.length < 5) return;
 
-                const nombre = c[2] || "Producto sin nombre";
-                const desc = c[3] || "";
-                const precio = parseFloat(c[4]) || 0;
-                const estado = (c[5] || "").toLowerCase();
-                const imgUrl = c[6] || "";
-                const tooltipText = c[8] || "¡Te va a encantar!";
-                const isAgotado = estado === 'agotado';
+                const price = parseFloat(col[4]) || 0;
+                const isSoldOut = (col[5] || "").toLowerCase() === 'agotado';
+                const toolText = col[8] || "¡Delicioso!";
+                const img = col[6] || "[https://via.placeholder.com/300?text=Gusgueria](https://via.placeholder.com/300?text=Gusgueria)";
 
-                const foto = imgUrl !== "" ? imgUrl : "[https://via.placeholder.com/300x300?text=La+Gusgueria](https://via.placeholder.com/300x300?text=La+Gusgueria)";
-
-                container.innerHTML += `
-                    <div class="product-card p-3 rounded-[2rem] bg-white border border-slate-100 flex gap-4 shadow-sm ${isAgotado ? 'opacity-50 grayscale' : ''}">
+                const card = `
+                    <div class="product-card p-3 flex gap-4 ${isSoldOut ? 'opacity-40 grayscale' : ''}">
                         <div class="img-box" 
-                             onmousemove="moveTooltip(event, '${tooltipText.replace(/'/g, "\\'")}')" 
-                             onmouseleave="hideTooltip()">
-                            <img src="${foto}" class="w-full h-full object-cover rounded-[1.5rem]" onerror="this.src='[https://via.placeholder.com/300x300?text=Antojo](https://via.placeholder.com/300x300?text=Antojo)'">
+                             onmousemove="showTip(event, '${toolText.replace(/'/g, "\\'")}')" 
+                             onmouseleave="hideTip()">
+                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=La+Gusgueria](https://via.placeholder.com/300?text=La+Gusgueria)'">
                         </div>
                         <div class="flex-1 flex flex-col justify-between py-1">
                             <div>
-                                <span class="text-[8px] font-black uppercase text-orange-600 tracking-widest">${c[1] || 'General'}</span>
-                                <h3 class="font-bold text-slate-800 text-sm leading-tight">${nombre}</h3>
-                                <p class="text-slate-400 text-[9px] line-clamp-2 mt-1 leading-relaxed">${desc}</p>
+                                <span class="text-[8px] font-black text-orange-600 uppercase tracking-widest">${col[1] || ''}</span>
+                                <h3 class="font-bold text-slate-800 text-sm leading-tight">${col[2] || ''}</h3>
+                                <p class="text-slate-400 text-[10px] mt-1 line-clamp-2">${col[3] || ''}</p>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-lg font-black text-slate-900">$${precio.toFixed(2)}</span>
-                                ${isAgotado ? 
-                                    '<span class="text-[9px] font-black text-red-500 uppercase">Agotado</span>' : 
-                                    `<button onclick="add('${nombre.replace(/'/g,"")}', ${precio})" class="bg-orange-100 text-orange-600 w-11 h-11 rounded-2xl font-black text-xl hover:bg-orange-600 hover:text-white transition-all">+</button>`
-                                }
+                                <span class="font-black text-slate-900">$${price.toFixed(2)}</span>
+                                ${isSoldOut ? '<span class="text-[8px] font-bold text-red-500 uppercase">Agotado</span>' : 
+                                `<button onclick="add('${col[2].replace(/'/g,"")}', ${price})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-black text-xl hover:bg-orange-600 hover:text-white transition-all">+</button>`}
                             </div>
                         </div>
                     </div>`;
+                container.insertAdjacentHTML('beforeend', card);
             });
 
-            if(container.innerHTML === "") {
-                container.innerHTML = "<p class='text-center py-20 text-slate-400'>No hay productos disponibles por ahora.</p>";
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('menu-container').innerHTML = "<div class='text-center py-20 text-red-500 font-bold'>Error de conexión. Revisa tu internet o el archivo CSV.</div>";
+            status.style.display = 'none';
+            container.classList.remove('hidden');
+
+        } catch (err) {
+            status.innerHTML = `<div class="text-red-500 font-bold">Error: ${err.message}<br><button onclick="location.reload()" class="mt-4 bg-slate-200 px-4 py-2 rounded">Reintentar</button></div>`;
         }
     }
 
-    // TOOLTIP SMART POSITIONING
-    function moveTooltip(e, text) {
-        tooltip.innerText = text;
-        tooltip.style.display = 'block';
-
+    function showTip(e, msg) {
+        tip.innerText = msg;
+        tip.style.display = 'block';
+        
         let x = e.clientX + 15;
         let y = e.clientY + 15;
 
-        const tw = tooltip.offsetWidth;
-        const th = tooltip.offsetHeight;
-        const ww = window.innerWidth;
-        const wh = window.innerHeight;
-
-        // Ajuste horizontal (Derecha)
-        if (x + tw > ww) x = e.clientX - tw - 15;
-        // Ajuste vertical (Abajo)
-        if (y + th > wh) y = e.clientY - th - 15;
+        // Ajuste por bordes
+        if (x + tip.offsetWidth > window.innerWidth) x = e.clientX - tip.offsetWidth - 15;
+        if (y + tip.offsetHeight > window.innerHeight) y = e.clientY - tip.offsetHeight - 15;
         
-        // Ajuste Tope/Base
+        // Garantizar que no se salga por arriba o izquierda
         if (y < 0) y = 10;
         if (x < 0) x = 10;
 
-        tooltip.style.left = x + 'px';
-        tooltip.style.top = y + 'px';
+        tip.style.left = x + 'px';
+        tip.style.top = y + 'px';
     }
 
-    function hideTooltip() { tooltip.style.display = 'none'; }
+    function hideTip() { tip.style.display = 'none'; }
 
     function add(n, p) {
-        carrito.push({ n, p });
+        cart.push({ n, p });
         total += p;
-        const ui = document.getElementById('total-display');
-        ui.innerText = '$' + total.toFixed(2);
-        ui.classList.remove('animate-pop');
-        void ui.offsetWidth;
-        ui.classList.add('animate-pop');
+        document.getElementById('total-val').innerText = '$' + total.toFixed(2);
         if (navigator.vibrate) navigator.vibrate(40);
     }
 
-    function enviarWhatsApp() {
-        if (carrito.length === 0) return alert("¡Agrega algo rico al carrito!");
+    function sendOrder() {
+        if (cart.length === 0) return alert("¡Selecciona algo primero!");
         const folio = Math.floor(Math.random() * 9000) + 1000;
-        let m = `*📝 NUEVO PEDIDO #${folio} - LA GUSGUERÍA*\n`;
-        m += `--------------------------------\n`;
-        carrito.forEach(i => m += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
-        m += `--------------------------------\n`;
-        m += `*💰 TOTAL: $${total.toFixed(2)}*\n\n`;
-        m += `📍 _¡Apaguen mi sed de la mala!_`;
-        window.open(`https://wa.me/${atob(HASH_TEL)}?text=${encodeURIComponent(m)}`, "_top");
+        let m = `*📝 PEDIDO #${folio} - LA GUSGUERÍA*\n`;
+        cart.forEach(i => m += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
+        m += `*💰 TOTAL: $${total.toFixed(2)}*`;
+        window.open(`https://wa.me/${atob(TEL_B64)}?text=${encodeURIComponent(m)}`, "_top");
     }
 
-    cargarMenu();
+    window.onload = loadMenu;
 </script>
 </body> </html>
