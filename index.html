@@ -3,77 +3,95 @@
   <head> 
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>La Gusguería - Menú Digital</title> 
+    <title>La Gusguería - Menú</title> 
     <script src="https://cdn.tailwindcss.com"></script> 
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> 
-    <style> body { font-family: 'Montserrat', sans-serif; } .product-card { transition: all 0.2s ease-in-out; } .product-card:active { transform: scale(0.96); } .img-container { position: relative; overflow: hidden; } .img-container img { transition: transform 0.5s; } @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } } .animate-bump { animation: bounce 0.3s ease-in-out; } 
+    <style> body { font-family: 'Montserrat', sans-serif; } .card-anim { transition: all 0.2s ease; } .card-anim:active { transform: scale(0.96); } @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } } .pop-effect { animation: pop 0.3s ease; } 
     </style> 
   </head> 
-  <body class="bg-gray-50 pb-32"> 
-    <header class="bg-gradient-to-br from-orange-600 to-red-700 text-white p-8 text-center shadow-2xl rounded-b-[3rem] sticky top-0 z-40"> 
-      <h1 class="text-4xl font-black uppercase">La Gusguería</h1> 
-      <p class="text-sm opacity-90 mt-2 italic font-bold">PARA APAGAR LA SED DE LA MALA</p> 
+  <body class="bg-slate-50 pb-32">
+    <header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-8 text-center shadow-lg rounded-b-[3rem] sticky top-0 z-40">
+      <h1 class="text-4xl font-black uppercase tracking-tighter">La Gusguería</h1>
+        <p class="text-[10px] font-bold tracking-[0.3em] opacity-90 mt-1 italic">PARA APAGAR LA SED DE LA MALA</p>
     </header>
-    <main id="menu-container" class="p-4 max-w-lg mx-auto space-y-4 mt-4">
-      <div class="text-center py-20"><p>Cargando el menú...</p></div>
+    <main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 mt-2">
+      <div class="text-center py-20 text-slate-400 font-bold">Cargando delicias...</div>
     </main>
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-5 shadow-2xl border-t flex justify-between items-center z-50 rounded-t-3xl max-w-2xl mx-auto">
-        <div class="flex flex-col">
-            <span class="text-gray-400 text-[10px] uppercase font-black">Total</span>
-            <span id="total-display" class="text-3xl font-black text-gray-900">$0.00</span>
-        </div>
-        <button onclick="enviarWhatsApp()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm">Pedir por WhatsApp</button>
-    </nav>
+
+<footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-5 shadow-2xl border-t flex justify-between items-center z-50 rounded-t-[2rem] max-w-2xl mx-auto">
+    <div class="flex flex-col">
+        <span class="text-gray-400 text-[10px] uppercase font-black tracking-widest">Total</span>
+        <span id="total-display" class="text-3xl font-black text-slate-800 tracking-tighter">$0.00</span>
+    </div>
+    <button onclick="enviarWhatsApp()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-green-200 uppercase text-sm active:scale-95 transition-all">
+        Pedir WhatsApp
+    </button>
+</footer>
 
 <script>
-    const SHEET_CSV_URL = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)'; 
-    const SECURITY_HASH = "NTIxNTYzOTQ3NTQ3OA=="; 
-    let carrito = []; let total = 0;
-    const _extract = (h) => atob(h);
+    // CONFIGURACIÓN
+    const CSV = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)';
+    const KEY = "NTIxNTYzOTQ3NTQ3OA=="; // Teléfono en Base64
 
-    async function cargarMenu() {
+    let carrito = [];
+    let total = 0;
+
+    async function cargar() {
         try {
-            const response = await fetch(SHEET_CSV_URL + '&t=' + Date.now());
-            const csvData = await response.text();
-            const filas = csvData.split('\n').slice(1);
+            const res = await fetch(CSV + '&t=' + Date.now());
+            const data = await res.text();
+            const filas = data.split('\n').slice(1);
             const container = document.getElementById('menu-container');
             container.innerHTML = "";
-            filas.forEach(fila => {
-                const col = fila.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
-                if (col.length < 6) return;
-                const isAgotado = col[5] && col[5].toLowerCase() === 'agotado';
-                const precio = parseFloat(col[4]) || 0;
-                const img = col[6] || "[https://via.placeholder.com/300?text=Antojo](https://via.placeholder.com/300?text=Antojo)";
+
+            filas.forEach(f => {
+                const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, '').trim());
+                if (c.length < 6) return;
+                const precio = parseFloat(c[4]) || 0;
+                const agotado = c[5] && c[5].toLowerCase() === 'agotado';
+                const img = c[6] || "[https://via.placeholder.com/300?text=Antojo](https://via.placeholder.com/300?text=Antojo)";
+
                 container.innerHTML += `
-                    <div class="product-card p-3 rounded-[2rem] bg-white border flex gap-4 ${isAgotado ? 'opacity-50 grayscale' : 'shadow-md'}">
-                        <div class="w-24 h-24 flex-shrink-0 overflow-hidden rounded-2xl bg-gray-100">
-                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=La+Gusgueria](https://via.placeholder.com/300?text=La+Gusgueria)'">
+                    <div class="card-anim p-3 rounded-[2rem] bg-white border border-slate-100 flex gap-4 shadow-sm ${agotado ? 'opacity-50 grayscale' : ''}">
+                        <div class="w-24 h-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100">
+                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=Gusgueria](https://via.placeholder.com/300?text=Gusgueria)'">
                         </div>
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div><h3 class="font-bold text-gray-800">${col[2]}</h3><p class="text-[10px] text-gray-400">${col[3]}</p></div>
-                            <div class="flex justify-between items-center"><span class="font-black">$${precio.toFixed(2)}</span>
-                            ${isAgotado ? '' : `<button onclick="agregar('${col[2].replace(/'/g,"")}',${precio})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-bold">+</button>`}</div>
+                        <div class="flex-1 flex flex-col justify-between py-1">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">${c[2]}</h3>
+                                <p class="text-slate-400 text-[10px] line-clamp-2">${c[3]}</p>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-black text-slate-900">$${precio.toFixed(2)}</span>
+                                ${agotado ? '<span class="text-[8px] font-black text-red-500 uppercase">Agotado</span>' : 
+                                `<button onclick="add('${c[2].replace(/'/g,"")}', ${precio})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-black text-xl hover:bg-orange-600 hover:text-white transition-all">+</button>`}
+                            </div>
                         </div>
                     </div>`;
             });
         } catch (e) { console.error(e); }
     }
 
-    function agregar(n, p) {
-        carrito.push({n, p}); total += p;
-        const d = document.getElementById('total-display');
-        d.innerText = '$' + total.toFixed(2);
-        d.classList.add('animate-bump'); setTimeout(() => d.classList.remove('animate-bump'), 300);
+    function add(n, p) {
+        carrito.push({ n, p });
+        total += p;
+        const ui = document.getElementById('total-display');
+        ui.innerText = '$' + total.toFixed(2);
+        ui.classList.remove('pop-effect');
+        void ui.offsetWidth;
+        ui.classList.add('pop-effect');
+        if (navigator.vibrate) navigator.vibrate(50);
     }
 
     function enviarWhatsApp() {
-        if (carrito.length === 0) return alert("¡Carrito vacío!");
-        let m = `*📝 PEDIDO - LA GUSGUERÍA*\n`;
+        if (carrito.length === 0) return alert("¡El carrito está vacío!");
+        let m = `*📝 NUEVO PEDIDO - LA GUSGUERÍA*\n--------------------------------\n`;
         carrito.forEach(i => m += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
-        m += `*TOTAL: $${total.toFixed(2)}*`;
-        window.open(`https://wa.me/${_extract(SECURITY_HASH)}?text=${encodeURIComponent(m)}`, "_top");
+        m += `--------------------------------\n*💰 TOTAL: $${total.toFixed(2)}*`;
+        window.open(`https://wa.me/${atob(KEY)}?text=${encodeURIComponent(m)}`, "_top");
     }
-    cargarMenu();
+
+    cargar();
 </script>
 </body> 
 </html>
