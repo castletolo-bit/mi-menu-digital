@@ -1,171 +1,172 @@
 <!DOCTYPE html>
-
-<html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>La Gusguería - Menú Digital</title> <script src="https://cdn.tailwindcss.com"></script> <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> <style> body { font-family: 'Montserrat', sans-serif; background-color: #f8fafc; overflow-x: hidden; -webkit-tap-highlight-color: transparent; } .product-card { transition: all 0.2s ease; border-radius: 2rem; background: white; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); } .product-card:active { transform: scale(0.96); }
-
-    #smart-tooltip {
-        position: fixed;
-        display: none;
-        z-index: 10000;
-        background: rgba(15, 23, 42, 0.98);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        max-width: 220px;
-        pointer-events: none;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        line-height: 1.4;
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>La Gusguería - Menú Digital</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Montserrat', sans-serif; }
+    .tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      max-width: 200px;
+      z-index: 50;
     }
-
-    .img-box { 
-        position: relative; 
-        width: 6.5rem; 
-        height: 6.5rem; 
-        flex-shrink: 0; 
-        border-radius: 1.5rem; 
-        background: #f1f5f9; 
-        cursor: help;
-        overflow: hidden;
+    .pop {
+      animation: pop 0.3s ease;
     }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
 
-    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-    .animate-pop { animation: pop 0.3s ease-out; }
-</style>
-</head> <body class="pb-40">
+  <!-- Header -->
+  <header class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-600 text-white text-center py-4 italic font-black uppercase">
+    La Gusguería
+  </header>
 
-<div id="smart-tooltip"></div>
+  <!-- Contenedor de productos -->
+  <main id="menu" class="p-4 space-y-4">
+    <p id="loading" class="text-center text-gray-600">Cargando menú...</p>
+  </main>
 
-<header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-10 text-center rounded-b-[3.5rem] shadow-xl sticky top-0 z-50">
-    <h1 class="text-4xl font-black uppercase tracking-tighter italic">La Gusguería</h1>
-    <p class="text-[10px] font-bold tracking-[0.2em] opacity-90 mt-2">PARA APAGAR LA SED DE LA MALA</p>
-</header>
-
-<div id="msg-box" class="max-w-md mx-auto mt-10 p-6 text-center">
-    <p class="text-slate-400 font-bold animate-pulse">Cargando delicias...</p>
-</div>
-
-<main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 hidden"></main>
-
-<footer class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md p-6 border-t z-50 rounded-t-[2.5rem] flex justify-between items-center max-w-2xl mx-auto shadow-2xl">
-    <div class="flex flex-col">
-        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total</span>
-        <span id="total-val" class="text-3xl font-black text-slate-900 tracking-tighter">$0.00</span>
-    </div>
-    <button onclick="enviarPedido()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs active:scale-95 transition-all shadow-lg shadow-green-100">
-        Pedir por WhatsApp
+  <!-- Footer con carrito -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex justify-between items-center">
+    <span>Total: $<span id="total">0</span></span>
+    <button id="whatsappBtn" class="bg-green-500 text-white px-4 py-2 rounded-full shadow-md">
+      Pedir por WhatsApp
     </button>
-</footer>
+  </footer>
 
-<script>
-    const CSV_LINK = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?output=csv)';
-    const TELEFONO_B64 = "NTIxNTYzOTQ3NTQ3OA=="; 
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?output=csv";
+    const WHATSAPP_BASE64 = "NTIxNTYzOTQ3NTQ3OA==";
+    const whatsappNumber = atob(WHATSAPP_BASE64);
 
     let carrito = [];
-    let sumaTotal = 0;
-    const tooltip = document.getElementById('smart-tooltip');
+    let total = 0;
 
-    async function init() {
-        const msgBox = document.getElementById('msg-box');
-        const container = document.getElementById('menu-container');
+    async function cargarMenu() {
+      try {
+        const res = await fetch(SHEET_URL);
+        if (!res.ok) throw new Error("Error al cargar CSV");
+        const text = await res.text();
+        const rows = text.trim().split("\n").slice(1); // ignorar cabecera
+        document.getElementById("loading").style.display = "none";
 
-        try {
-            const response = await fetch(CSV_LINK + '&t=' + Date.now());
-            if (!response.ok) throw new Error("Error de conexión");
-            
-            const data = await response.text();
-            const rows = data.split(/\r?\n/).filter(row => row.trim() !== "").slice(1);
-            
-            container.innerHTML = "";
-            
-            rows.forEach(row => {
-                const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
-                
-                if (cols.length < 9) return;
+        rows.forEach(row => {
+          const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+          const [id, categoria, nombre, descES, precio, estado, imgURL, etiqueta, tooltip, descEN] = cols;
 
-                const nombre = cols[2];
-                const precio = parseFloat(cols[4]) || 0;
-                const estado = (cols[5] || "").toLowerCase();
-                const img = cols[6] || "";
-                const toolText = cols[8] || "¡Mmm, se ve bien!";
-                const isAgotado = estado === 'agotado';
+          const card = document.createElement("div");
+          card.className = "flex bg-white rounded-lg shadow-md overflow-hidden";
 
-                container.innerHTML += `
-                    <div class="product-card p-3 flex gap-4 ${isAgotado ? 'opacity-40 grayscale' : ''}">
-                        <div class="img-box" 
-                             onmousemove="moveTooltip(event, '${toolText.replace(/'/g, "\\'")}')" 
-                             onmouseleave="hideTooltip()">
-                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=Antojo](https://via.placeholder.com/300?text=Antojo)'">
-                        </div>
-                        <div class="flex-1 flex flex-col justify-between py-1">
-                            <div>
-                                <span class="text-[8px] font-black text-orange-600 uppercase tracking-widest">${cols[1] || ''}</span>
-                                <h3 class="font-bold text-slate-800 text-sm leading-tight">${nombre}</h3>
-                                <p class="text-slate-400 text-[10px] mt-1 line-clamp-2">${cols[3] || ''}</p>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="font-black text-slate-900 text-lg">$${precio.toFixed(2)}</span>
-                                ${isAgotado ? 
-                                    '<span class="text-[9px] font-bold text-red-600 uppercase">Agotado</span>' : 
-                                    `<button onclick="add('${nombre.replace(/'/g,"")}', ${precio})" class="bg-orange-100 text-orange-600 w-11 h-11 rounded-xl font-black text-xl hover:bg-orange-500 hover:text-white transition-colors">+</button>`
-                                }
-                            </div>
-                        </div>
-                    </div>`;
-            });
+          const img = document.createElement("img");
+          img.src = imgURL;
+          img.alt = nombre;
+          img.className = "w-24 h-24 object-cover rounded-l-2xl cursor-pointer";
+          if (estado.trim().toLowerCase() === "agotado") {
+            img.classList.add("opacity-40", "grayscale");
+          }
 
-            msgBox.style.display = 'none';
-            container.classList.remove('hidden');
+          // Tooltip
+          img.addEventListener("mouseenter", e => mostrarTooltip(e, tooltip));
+          img.addEventListener("mouseleave", ocultarTooltip);
+          img.addEventListener("touchstart", e => mostrarTooltip(e, tooltip));
+          img.addEventListener("touchend", ocultarTooltip);
 
-        } catch (err) {
-            msgBox.innerHTML = `<div class="bg-white p-6 rounded-3xl shadow-sm border border-red-100 max-w-xs mx-auto">
-                <p class="text-red-500 font-bold mb-2">Error de Datos</p>
-                <button onclick="location.reload()" class="mt-4 bg-slate-900 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">Reintentar</button>
-            </div>`;
-        }
+          const info = document.createElement("div");
+          info.className = "p-3 flex-1";
+          info.innerHTML = `
+            <h3 class="font-bold">${nombre}</h3>
+            <p class="text-sm text-gray-600">${descES}</p>
+            <p class="text-red-600 font-semibold">$${precio}</p>
+          `;
+
+          const btn = document.createElement("button");
+          btn.textContent = "Agregar";
+          btn.className = "bg-orange-500 text-white px-3 py-1 rounded-md mt-2";
+          btn.disabled = estado.trim().toLowerCase() === "agotado";
+          btn.onclick = () => agregarCarrito(nombre, precio);
+
+          info.appendChild(btn);
+          card.appendChild(img);
+          card.appendChild(info);
+          document.getElementById("menu").appendChild(card);
+        });
+      } catch (err) {
+        document.getElementById("loading").textContent = "Error al cargar menú.";
+        const retryBtn = document.createElement("button");
+        retryBtn.textContent = "Reintentar";
+        retryBtn.className = "bg-red-500 text-white px-4 py-2 rounded mt-2";
+        retryBtn.onclick = cargarMenu;
+        document.getElementById("menu").appendChild(retryBtn);
+      }
     }
 
-    function moveTooltip(e, msg) {
-        tooltip.innerText = msg;
-        tooltip.style.display = 'block';
-        
-        const offset = 20;
-        let x = e.clientX + offset;
-        let y = e.clientY + offset;
-
-        const tWidth = tooltip.offsetWidth;
-        const tHeight = tooltip.offsetHeight;
-        const wWidth = window.innerWidth;
-        const wHeight = window.innerHeight;
-
-        if (x + tWidth > wWidth) x = e.clientX - tWidth - offset;
-        if (y + tHeight > wHeight) y = e.clientY - tHeight - offset;
-        if (y < 0) y = 10;
-        if (x < 0) x = 10;
-
-        tooltip.style.left = x + 'px';
-        tooltip.style.top = y + 'px';
+    function agregarCarrito(nombre, precio) {
+      carrito.push({ nombre, precio: parseFloat(precio) });
+      total += parseFloat(precio);
+      const totalEl = document.getElementById("total");
+      totalEl.textContent = total.toFixed(2);
+      totalEl.classList.add("pop");
+      setTimeout(() => totalEl.classList.remove("pop"), 300);
     }
 
-    function hideTooltip() { tooltip.style.display = 'none'; }
+    function mostrarTooltip(e, texto) {
+      if (!texto) return;
+      const tooltip = document.createElement("div");
+      tooltip.className = "tooltip";
+      tooltip.textContent = texto;
+      document.body.appendChild(tooltip);
 
-    function add(n, p) {
-        carrito.push({ n, p });
-        sumaTotal += p;
-        document.getElementById('total-val').innerText = '$' + sumaTotal.toFixed(2);
-        if (navigator.vibrate) navigator.vibrate(40);
+      const rect = e.target.getBoundingClientRect();
+      let top = rect.top + window.scrollY;
+      let left = rect.right + 10;
+
+      if (left + tooltip.offsetWidth > window.innerWidth) {
+        left = rect.left - tooltip.offsetWidth - 10;
+      }
+      if (top + tooltip.offsetHeight > window.innerHeight) {
+        top = rect.top - tooltip.offsetHeight - 10;
+      }
+
+      tooltip.style.top = top + "px";
+      tooltip.style.left = left + "px";
+      e.target._tooltip = tooltip;
     }
 
-    function enviarPedido() {
-        if (carrito.length === 0) return alert("¡El carrito está vacío!");
-        const folio = Math.floor(Math.random() * 9000) + 1000;
-        let msg = `*📝 PEDIDO #${folio} - LA GUSGUERÍA*\n--------------------------------\n`;
-        carrito.forEach(i => msg += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
-        msg += `--------------------------------\n*💰 TOTAL: $${sumaTotal.toFixed(2)}*`;
-        window.open(`https://wa.me/${atob(TELEFONO_B64)}?text=${encodeURIComponent(msg)}`, "_top");
+    function ocultarTooltip(e) {
+      if (e.target._tooltip) {
+        e.target._tooltip.remove();
+        e.target._tooltip = null;
+      }
     }
 
-    window.onload = init;
-</script>
-</body> </html>
+    document.getElementById("whatsappBtn").addEventListener("click", () => {
+      if (carrito.length === 0) return alert("Tu carrito está vacío, compa.");
+      const folio = Math.floor(Math.random() * 100000);
+      let mensaje = `*Pedido La Gusguería*\\nFolio: ${folio}\\n\\n`;
+      carrito.forEach(item => {
+        mensaje += `- ${item.nombre}: $${item.precio}\\n`;
+      });
+      mensaje += `\\n*Total: $${total.toFixed(2)}*`;
+
+      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
+      window.open(url, "_blank");
+    });
+
+    cargarMenu();
+  </script>
+</body>
+</html>
