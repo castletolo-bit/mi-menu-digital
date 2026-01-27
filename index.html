@@ -1,6 +1,43 @@
 <!DOCTYPE html>
 
-<html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>La Gusguería - Menú Digital</title> <script src="https://cdn.tailwindcss.com"></script> <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> <style> body { font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; } .product-card { transition: transform 0.2s; } .product-card:active { transform: scale(0.96); } .img-box { position: relative; overflow: hidden; border-radius: 1.5rem; background: #f3f4f6; width: 6rem; height: 6rem; flex-shrink: 0; } @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } } .animate-pop { animation: pop 0.3s ease-out; } </style> </head> <body class="bg-gray-50 pb-40">
+<html lang="es"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>La Gusguería - Menú Digital Pro</title> <script src="https://cdn.tailwindcss.com"></script> <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> <style> body { font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; } .product-card { transition: all 0.2s; } .product-card:active { transform: scale(0.96); }
+
+    /* Estilos del Tooltip */
+    #custom-tooltip {
+        position: fixed;
+        display: none;
+        z-index: 1000;
+        background: rgba(15, 23, 42, 0.95);
+        color: white;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        max-width: 200px;
+        pointer-events: none;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+    }
+
+    .img-box { 
+        position: relative; 
+        overflow: hidden; 
+        border-radius: 1.5rem; 
+        background: #f3f4f6; 
+        width: 6rem; 
+        height: 6rem; 
+        flex-shrink: 0; 
+        cursor: help;
+    }
+
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .animate-pop { animation: pop 0.3s ease-out; }
+</style>
+</head> <body class="bg-gray-50 pb-40">
+
+<!-- Tooltip Invisible Inicialmente -->
+<div id="custom-tooltip"></div>
 
 <header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-10 text-center shadow-2xl rounded-b-[3.5rem] sticky top-0 z-40">
     <h1 class="text-4xl font-black uppercase tracking-tighter">La Gusguería</h1>
@@ -27,6 +64,7 @@
 
     let carrito = [];
     let total = 0;
+    const tooltip = document.getElementById('custom-tooltip');
 
     async function cargarMenu() {
         try {
@@ -39,17 +77,21 @@
             filas.forEach(f => {
                 const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, '').trim());
                 
-                if (c.length < 7) return;
+                // Tu estructura: 0:ID, 1:Categoria, 2:Nombre, 3:Desc_ES, 4:Precio, 5:Estado, 6:ImagenURL, 7:Etiqueta, 8:Tooltip
+                if (c.length < 9) return;
 
                 const nombre = c[2];
                 const desc = c[3];
                 const precio = parseFloat(c[4]) || 0;
                 const isAgotado = c[5] && c[5].toLowerCase() === 'agotado';
                 const imgUrl = c[6] || "[https://via.placeholder.com/300x300?text=La+Gusgueria](https://via.placeholder.com/300x300?text=La+Gusgueria)";
+                const tooltipText = c[8] || "¡Prueba nuestra delicia!";
 
                 container.innerHTML += `
                     <div class="product-card p-3 rounded-[2rem] bg-white border border-gray-100 flex gap-4 shadow-sm ${isAgotado ? 'opacity-50 grayscale' : ''}">
-                        <div class="img-box">
+                        <div class="img-box" 
+                             onmousemove="showTooltip(event, '${tooltipText.replace(/'/g, "\\'")}')" 
+                             onmouseleave="hideTooltip()">
                             <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300x300?text=Gusgueria](https://via.placeholder.com/300x300?text=Gusgueria)'">
                         </div>
                         <div class="flex-1 flex flex-col justify-between py-1">
@@ -71,6 +113,42 @@
         } catch (e) {
             document.getElementById('menu-container').innerHTML = "<p class='text-center p-10 text-red-400 font-bold'>Error al conectar con el menú.</p>";
         }
+    }
+
+    // --- LÓGICA DE TOOLTIP INTELIGENTE ---
+    function showTooltip(e, text) {
+        tooltip.innerText = text;
+        tooltip.style.display = 'block';
+
+        let x = e.clientX + 15;
+        let y = e.clientY + 15;
+
+        // Detección de bordes
+        const tooltipWidth = tooltip.offsetWidth;
+        const tooltipHeight = tooltip.offsetHeight;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        // Si se sale por la derecha, mover a la izquierda del cursor
+        if (x + tooltipWidth > windowWidth) {
+            x = e.clientX - tooltipWidth - 15;
+        }
+
+        // Si se sale por abajo, mover arriba del cursor
+        if (y + tooltipHeight > windowHeight) {
+            y = e.clientY - tooltipHeight - 15;
+        }
+
+        // Si por alguna razón queda arriba del tope (0)
+        if (y < 0) y = 10;
+        if (x < 0) x = 10;
+
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+    }
+
+    function hideTooltip() {
+        tooltip.style.display = 'none';
     }
 
     function add(n, p) {
