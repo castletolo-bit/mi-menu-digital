@@ -3,73 +3,92 @@
   <head> 
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>La Gusguería - Menú</title> 
+    <title>La Gusguería - Menú Digital</title> 
     <script src="https://cdn.tailwindcss.com"></script> 
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet"> 
-    <style> body { font-family: 'Montserrat', sans-serif; } .card-anim { transition: all 0.2s ease; } .card-anim:active { transform: scale(0.96); } @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } } .pop-effect { animation: pop 0.3s ease; } 
+    <style> body { font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; } .product-card { transition: transform 0.2s; } .product-card:active { transform: scale(0.96); } .img-container { position: relative; overflow: hidden; border-radius: 1.5rem; background: #f3f4f6; } @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } } .animate-pop { animation: bounce 0.3s ease-out; } 
     </style> 
   </head> 
-  <body class="bg-slate-50 pb-32">
-    <header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-8 text-center shadow-lg rounded-b-[3rem] sticky top-0 z-40">
+  <body class="bg-gray-50 pb-40">
+    <header class="bg-gradient-to-r from-orange-600 to-red-600 text-white p-10 text-center shadow-2xl rounded-b-[3.5rem] sticky top-0 z-40">
       <h1 class="text-4xl font-black uppercase tracking-tighter">La Gusguería</h1>
-        <p class="text-[10px] font-bold tracking-[0.3em] opacity-90 mt-1 italic">PARA APAGAR LA SED DE LA MALA</p>
+      <p class="text-[10px] font-bold tracking-[0.3em] opacity-90 mt-2 italic uppercase">Para apagar la sed de la mala</p>
     </header>
-    <main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 mt-2">
-      <div class="text-center py-20 text-slate-400 font-bold">Cargando delicias...</div>
+
+    <main id="menu-container" class="p-4 max-w-md mx-auto space-y-4 mt-4">
+      <div class="text-center py-20 text-gray-400 font-bold italic">Cargando el antojo...</div>
     </main>
 
-<footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm p-5 shadow-2xl border-t flex justify-between items-center z-50 rounded-t-[2rem] max-w-2xl mx-auto">
+<footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] border-t border-gray-100 flex justify-between items-center z-50 rounded-t-[2.5rem] max-w-2xl mx-auto">
     <div class="flex flex-col">
-        <span class="text-gray-400 text-[10px] uppercase font-black tracking-widest">Total</span>
-        <span id="total-display" class="text-3xl font-black text-slate-800 tracking-tighter">$0.00</span>
+        <span class="text-gray-400 text-[10px] uppercase font-black tracking-widest">Total del Pedido</span>
+        <span id="total-display" class="text-3xl font-black text-gray-900 tracking-tighter">$0.00</span>
     </div>
-    <button onclick="enviarWhatsApp()" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-black shadow-lg shadow-green-200 uppercase text-sm active:scale-95 transition-all">
-        Pedir WhatsApp
+    <button onclick="enviarWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs shadow-lg shadow-green-100 active:scale-95 transition-all">
+        Pedir por WhatsApp
     </button>
 </footer>
 
 <script>
-    // CONFIGURACIÓN
-    const CSV = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)';
-    const KEY = "NTIxNTYzOTQ3NTQ3OA=="; // Teléfono en Base64
+    // CONFIGURACIÓN BASADA EN TU ESTRUCTURA
+    const CSV_URL = '[https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?gid=1374506693&single=true&output=csv)';
+    const HASH_TEL = "NTIxNTYzOTQ3NTQ3OA=="; // Número: 5215639475478
 
     let carrito = [];
     let total = 0;
 
-    async function cargar() {
+    async function cargarMenu() {
         try {
-            const res = await fetch(CSV + '&t=' + Date.now());
-            const data = await res.text();
-            const filas = data.split('\n').slice(1);
+            const res = await fetch(CSV_URL + '&t=' + Date.now());
+            const csvText = await res.text();
+            // Separamos por filas y quitamos la cabecera
+            const filas = csvText.split(/\r?\n/).slice(1);
             const container = document.getElementById('menu-container');
             container.innerHTML = "";
 
             filas.forEach(f => {
+                // Regex para separar por coma respetando comillas
                 const c = f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(x => x.replace(/"/g, '').trim());
-                if (c.length < 6) return;
+                
+                // Basado en tu estructura:
+                // 0:ID, 1:Categoria, 2:Nombre, 3:Descripcion_ES, 4:Precio, 5:Estado, 6:ImagenURL
+                if (c.length < 7) return;
+
+                const nombre = c[2];
+                const desc = c[3];
                 const precio = parseFloat(c[4]) || 0;
-                const agotado = c[5] && c[5].toLowerCase() === 'agotado';
-                const img = c[6] || "[https://via.placeholder.com/300?text=Antojo](https://via.placeholder.com/300?text=Antojo)";
+                const estado = c[5] ? c[5].toLowerCase() : "";
+                const imgUrl = c[6] || "";
+                const isAgotado = estado === 'agotado';
+
+                // Imagen con respaldo
+                const foto = imgUrl !== "" ? imgUrl : "[https://via.placeholder.com/300x300?text=La+Gusgueria](https://via.placeholder.com/300x300?text=La+Gusgueria)";
 
                 container.innerHTML += `
-                    <div class="card-anim p-3 rounded-[2rem] bg-white border border-slate-100 flex gap-4 shadow-sm ${agotado ? 'opacity-50 grayscale' : ''}">
-                        <div class="w-24 h-24 flex-shrink-0 overflow-hidden rounded-2xl bg-slate-100">
-                            <img src="${img}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300?text=Gusgueria](https://via.placeholder.com/300?text=Gusgueria)'">
+                    <div class="product-card p-3 rounded-[2rem] bg-white border border-gray-100 flex gap-4 shadow-sm ${isAgotado ? 'opacity-50 grayscale' : ''}">
+                        <div class="w-24 h-24 flex-shrink-0 img-container">
+                            <img src="${foto}" class="w-full h-full object-cover" onerror="this.src='[https://via.placeholder.com/300x300?text=Antojo](https://via.placeholder.com/300x300?text=Antojo)'">
                         </div>
                         <div class="flex-1 flex flex-col justify-between py-1">
                             <div>
-                                <h3 class="font-bold text-slate-800 text-sm">${c[2]}</h3>
-                                <p class="text-slate-400 text-[10px] line-clamp-2">${c[3]}</p>
+                                <span class="text-[8px] font-black uppercase text-orange-500 tracking-widest">${c[1]}</span>
+                                <h3 class="font-bold text-gray-800 text-sm leading-tight">${nombre}</h3>
+                                <p class="text-gray-400 text-[9px] line-clamp-2 mt-1">${desc}</p>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-lg font-black text-slate-900">$${precio.toFixed(2)}</span>
-                                ${agotado ? '<span class="text-[8px] font-black text-red-500 uppercase">Agotado</span>' : 
-                                `<button onclick="add('${c[2].replace(/'/g,"")}', ${precio})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-black text-xl hover:bg-orange-600 hover:text-white transition-all">+</button>`}
+                                <span class="text-lg font-black text-gray-900">$${precio.toFixed(2)}</span>
+                                ${isAgotado ? 
+                                    '<span class="text-[8px] font-black text-red-500 border border-red-200 px-2 py-1 rounded-lg">AGOTADO</span>' : 
+                                    `<button onclick="add('${nombre.replace(/'/g,"")}', ${precio})" class="bg-orange-100 text-orange-600 w-10 h-10 rounded-xl font-black text-xl">+</button>`
+                                }
                             </div>
                         </div>
                     </div>`;
             });
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error("Error cargando CSV:", e);
+            document.getElementById('menu-container').innerHTML = "<p class='text-center text-red-400'>Error al conectar con el menú.</p>";
+        }
     }
 
     function add(n, p) {
@@ -77,21 +96,30 @@
         total += p;
         const ui = document.getElementById('total-display');
         ui.innerText = '$' + total.toFixed(2);
-        ui.classList.remove('pop-effect');
+        ui.classList.remove('animate-pop');
         void ui.offsetWidth;
-        ui.classList.add('pop-effect');
-        if (navigator.vibrate) navigator.vibrate(50);
+        ui.classList.add('animate-pop');
+        if (navigator.vibrate) navigator.vibrate(40);
     }
 
     function enviarWhatsApp() {
-        if (carrito.length === 0) return alert("¡El carrito está vacío!");
-        let m = `*📝 NUEVO PEDIDO - LA GUSGUERÍA*\n--------------------------------\n`;
+        if (carrito.length === 0) {
+            alert("¡El carrito está vacío, carnal!");
+            return;
+        }
+        const folio = Math.floor(Math.random() * 9000) + 1000;
+        let m = `*📝 PEDIDO #${folio} - LA GUSGUERÍA*\n`;
+        m += `--------------------------------\n`;
         carrito.forEach(i => m += `▪️ ${i.n} .. $${i.p.toFixed(2)}\n`);
-        m += `--------------------------------\n*💰 TOTAL: $${total.toFixed(2)}*`;
-        window.open(`https://wa.me/${atob(KEY)}?text=${encodeURIComponent(m)}`, "_top");
+        m += `--------------------------------\n`;
+        m += `*💰 TOTAL: $${total.toFixed(2)}*\n\n`;
+        m += `📍 _¡Me urge apagar la sed de la mala!_`;
+        
+        const link = `https://wa.me/${atob(HASH_TEL)}?text=${encodeURIComponent(m)}`;
+        window.open(link, "_top");
     }
 
-    cargar();
+    cargarMenu();
 </script>
 </body> 
 </html>
