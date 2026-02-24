@@ -132,21 +132,27 @@ fetch(sheetCSV)
 
     const lineas = texto.trim().split("\n");
 
-    datos = lineas.map(linea => {
+    // 🔥 Quitamos encabezados (primera fila)
+    const datosSinHeader = lineas.slice(1);
+
+    datos = datosSinHeader.map(linea => {
+
+        // Limpiar posibles comillas dobles
+        linea = linea.replace(/"/g, "");
 
         const p = linea.split(",");
 
         return {
-            IdCliente: decodeBase64Safe(p[0]),
-            Nombre: decodeBase64Safe(p[1]),
-            Apellidos: decodeBase64Safe(p[2]),
-            Direccion: decodeBase64Safe(p[3]),
-            Periodo: decodeBase64Safe(p[4]),
-            FechaPago: decodeBase64Safe(p[5]),
-            PagoTotal: parseFloat(decodeBase64Safe(p[6]) || 0),
-            Capital: parseFloat(decodeBase64Safe(p[7]) || 0),
-            Intereses: parseFloat(decodeBase64Safe(p[8]) || 0),
-            Seguros: parseFloat(decodeBase64Safe(p[9]) || 0)
+            IdCliente: decodeBase64Safe(p[0]?.trim()),
+            Nombre: decodeBase64Safe(p[1]?.trim()),
+            Apellidos: decodeBase64Safe(p[2]?.trim()),
+            Direccion: decodeBase64Safe(p[3]?.trim()),
+            Periodo: decodeBase64Safe(p[4]?.trim()),
+            FechaPago: decodeBase64Safe(p[5]?.trim()),
+            PagoTotal: parseFloat(decodeBase64Safe(p[6]?.trim()) || 0),
+            Capital: parseFloat(decodeBase64Safe(p[7]?.trim()) || 0),
+            Intereses: parseFloat(decodeBase64Safe(p[8]?.trim()) || 0),
+            Seguros: parseFloat(decodeBase64Safe(p[9]?.trim()) || 0)
         };
 
     });
@@ -155,7 +161,6 @@ fetch(sheetCSV)
 .catch(err=>{
     document.getElementById("resultado").innerHTML="<p>Error cargando datos.</p>";
 });
-
 
 /* ===============================
    BUSCAR CLIENTE
