@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fintech Demo - Estado de Cuenta</title>
 
+<!-- Librería para generar PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
+/* ======== ESTILOS GENERALES ======== */
 body{
     margin:0;
     font-family: 'Segoe UI', sans-serif;
@@ -30,6 +32,7 @@ body{
 }
 
 h1{margin-top:0;}
+
 input,button{
     width:100%;
     padding:12px;
@@ -68,11 +71,13 @@ button:hover{
 
 <body>
 
+<!-- ======== PANEL IZQUIERDO (RESULTADO) ======== -->
 <div id="left">
     <h1>Estado de Cuenta</h1>
     <div id="resultado"></div>
 </div>
 
+<!-- ======== PANEL DERECHO (CONSULTA) ======== -->
 <div id="right">
     <h2>Consulta Cliente</h2>
 
@@ -84,90 +89,138 @@ button:hover{
 
 <script>
 
-// 🔗 URL del CSV público de Google Sheets
-const sheetCSV = 
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv";
+/* ===============================
+   CONFIGURACIÓN
+=================================*/
 
+// URL pública de tu Google Sheets en formato CSV
+const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv";
+
+// Aquí se almacenan los datos ya procesados
 let datos = [];
 
-// 🚀 Cargar CSV desde URL del Google Sheets
+
+/* ===============================
+   FUNCIONES UTILITARIAS
+=================================*/
+
+// 🔐 Decodifica Base64 si aplica
+function decodeBase64Safe(value){
+    try{
+        return atob(value);
+    }catch(e){
+        return value; // si no es base64 válido lo deja igual
+    }
+}
+
+// 💰 Formatear moneda mexicana
+function formatoMXN(numero){
+    return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    }).format(numero);
+}
+
+
+/* ===============================
+   CARGAR DATOS DESDE GOOGLE SHEETS
+=================================*/
+
 fetch(sheetCSV)
 .then(resp => resp.text())
 .then(texto => {
+
     const lineas = texto.trim().split("\n");
 
-    datos = lineas.map(linea=>{
+    datos = lineas.map(linea => {
+
         const p = linea.split(",");
+
         return {
-            IdCliente:p[0],
-            Nombre:p[1],
-            Apellidos:p[2],
-            Direccion:p[3],
-            Periodo:p[4],
-            FechaPago:p[5],
-            PagoTotal:parseFloat(p[6]||0),
-            Capital:parseFloat(p[7]||0),
-            Intereses:parseFloat(p[8]||0),
-            Seguros:parseFloat(p[9]||0)
+            IdCliente: decodeBase64Safe(p[0]),
+            Nombre: decodeBase64Safe(p[1]),
+            Apellidos: decodeBase64Safe(p[2]),
+            Direccion: decodeBase64Safe(p[3]),
+            Periodo: decodeBase64Safe(p[4]),
+            FechaPago: decodeBase64Safe(p[5]),
+            PagoTotal: parseFloat(decodeBase64Safe(p[6]) || 0),
+            Capital: parseFloat(decodeBase64Safe(p[7]) || 0),
+            Intereses: parseFloat(decodeBase64Safe(p[8]) || 0),
+            Seguros: parseFloat(decodeBase64Safe(p[9]) || 0)
         };
+
     });
+
 })
 .catch(err=>{
-    console.error("Error cargando CSV:",err);
     document.getElementById("resultado").innerHTML="<p>Error cargando datos.</p>";
 });
 
-// 🔎 Buscar cliente y mostrar
+
+/* ===============================
+   BUSCAR CLIENTE
+=================================*/
+
 function buscarCliente(){
+
     const id = document.getElementById("clienteId").value.trim();
     const resultado = document.getElementById("resultado");
-    const pagos = datos.filter(d=>d.IdCliente === id);
 
-    if(pagos.length===0){
+    const pagos = datos.filter(d => d.IdCliente === id);
+
+    if(pagos.length === 0){
         resultado.innerHTML="<p>No se encontró cliente.</p>";
         return;
     }
 
     const cliente = pagos[0];
+
     const totalPagado = pagos.reduce((acc,p)=>acc+p.PagoTotal,0);
     const totalCapital = pagos.reduce((acc,p)=>acc+p.Capital,0);
     const totalIntereses = pagos.reduce((acc,p)=>acc+p.Intereses,0);
 
-    let html=`
+    let html = `
         <div class="resumen">
             <h3>${cliente.Nombre} ${cliente.Apellidos}</h3>
             <p><strong>Dirección:</strong> ${cliente.Direccion}</p>
-            <p><strong>Total Pagado:</strong> $${totalPagado.toFixed(2)}</p>
-            <p><strong>Capital:</strong> $${totalCapital.toFixed(2)}</p>
-            <p><strong>Intereses:</strong> $${totalIntereses.toFixed(2)}</p>
+            <p><strong>Total Pagado:</strong> ${formatoMXN(totalPagado)}</p>
+            <p><strong>Total Capital:</strong> ${formatoMXN(totalCapital)}</p>
+            <p><strong>Total Intereses:</strong> ${formatoMXN(totalIntereses)}</p>
         </div>
     `;
 
     pagos.forEach(p=>{
-        html+=`
+        html += `
         <div class="card">
             <p><strong>Periodo:</strong> ${p.Periodo}</p>
             <p><strong>Fecha:</strong> ${p.FechaPago}</p>
-            <p><strong>Pago:</strong> $${p.PagoTotal.toFixed(2)}</p>
-            <p><strong>Capital:</strong> $${p.Capital.toFixed(2)}</p>
-            <p><strong>Intereses:</strong> $${p.Intereses.toFixed(2)}</p>
-            <p><strong>Seguros:</strong> $${p.Seguros.toFixed(2)}</p>
+            <p><strong>Pago:</strong> ${formatoMXN(p.PagoTotal)}</p>
+            <p><strong>Capital:</strong> ${formatoMXN(p.Capital)}</p>
+            <p><strong>Intereses:</strong> ${formatoMXN(p.Intereses)}</p>
+            <p><strong>Seguros:</strong> ${formatoMXN(p.Seguros)}</p>
         </div>
         `;
     });
 
-    html+=`<button onclick="descargarPDF('${id}')">Descargar PDF</button>`;
-    resultado.innerHTML=html;
+    html += `<button onclick="descargarPDF('${id}')">Descargar PDF</button>`;
+
+    resultado.innerHTML = html;
 }
 
-// 💎 Generar PDF estilo banca
+
+/* ===============================
+   GENERAR PDF ESTILO BANCARIO
+=================================*/
+
 function descargarPDF(id){
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     const pagos = datos.filter(d=>d.IdCliente===id);
     const cliente = pagos[0];
 
+    // Título
     doc.setFontSize(18);
     doc.text("ESTADO DE CUENTA", 70, 20);
 
@@ -175,13 +228,14 @@ function descargarPDF(id){
     doc.text(`Cliente: ${cliente.Nombre} ${cliente.Apellidos}`, 20, 40);
     doc.text(`Dirección: ${cliente.Direccion}`, 20, 50);
 
-    let y=70;
+    let y = 70;
+
     pagos.forEach(p=>{
         doc.text(`Periodo: ${p.Periodo}   Fecha: ${p.FechaPago}`,20,y);
         y+=8;
-        doc.text(`Pago: $${p.PagoTotal.toFixed(2)}  Capital: $${p.Capital.toFixed(2)}`,20,y);
+        doc.text(`Pago: ${formatoMXN(p.PagoTotal)}   Capital: ${formatoMXN(p.Capital)}`,20,y);
         y+=8;
-        doc.text(`Intereses: $${p.Intereses.toFixed(2)}  Seguros: $${p.Seguros.toFixed(2)}`,20,y);
+        doc.text(`Intereses: ${formatoMXN(p.Intereses)}   Seguros: ${formatoMXN(p.Seguros)}`,20,y);
         y+=12;
     });
 
