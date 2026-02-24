@@ -1,170 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>La Gusguería - Menú Digital</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { font-family: 'Montserrat', sans-serif; }
-    .tooltip {
-      position: absolute;
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      max-width: 200px;
-      z-index: 50;
-    }
-    .pop { animation: pop 0.3s ease; }
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.3); }
-      100% { transform: scale(1); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fintech Demo - Estado de Cuenta</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
+    display:flex;
+    height:100vh;
+    background:#f1f5f9;
+}
+
+#left{
+    width:70%;
+    padding:40px;
+    overflow-y:auto;
+}
+
+#right{
+    width:30%;
+    padding:40px;
+    background:#0f172a;
+    color:white;
+}
+
+h1{margin-top:0;}
+input,button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    margin-bottom:15px;
+    border:none;
+    border-radius:6px;
+}
+
+button{
+    background:#2563eb;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1d4ed8;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.resumen{
+    background:#e2e8f0;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+</style>
 </head>
-<body class="bg-gray-100">
 
-  <!-- Header -->
-  <header class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-600 text-white text-center py-4 italic font-black uppercase">
-    La Gusguería
-  </header>
+<body>
 
-  <!-- Contenedor de productos -->
-  <main id="menu" class="p-4 space-y-4">
-    <p id="loading" class="text-center text-gray-600">Cargando menú...</p>
-  </main>
+<div id="left">
+    <h1>Estado de Cuenta</h1>
+    <div id="resultado"></div>
+</div>
 
-  <!-- Footer con carrito -->
-  <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-4 flex justify-between items-center">
-    <span>Total: $<span id="total">0</span></span>
-    <button id="whatsappBtn" class="bg-green-500 text-white px-4 py-2 rounded-full shadow-md">
-      Pedir por WhatsApp
-    </button>
-  </footer>
+<div id="right">
+    <h2>Consulta Cliente</h2>
 
-  <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT1TiLuDQq5Dk3vJjhmd534zHWNeHu4v-UAnDcfZxMpFaTNAzn-hy5Wmn8O1IqYvNUiMF7qbGfGLSBR/pub?output=csv";
-    const WHATSAPP_BASE64 = "NTIxNTYzOTQ3NTQ3OA==";
-    const whatsappNumber = atob(WHATSAPP_BASE64);
+    <label>Ingrese IdCliente:</label>
+    <input type="text" id="clienteId">
 
-    let carrito = [];
-    let total = 0;
+    <button onclick="buscarCliente()">Consultar</button>
+</div>
 
-    async function cargarMenu() {
-      try {
-        const res = await fetch(SHEET_URL);
-        if (!res.ok) throw new Error("Error al cargar CSV");
-        const text = await res.text();
-        const rows = text.trim().split("\n").slice(1); // ignorar cabecera
-        document.getElementById("loading").style.display = "none";
+<script>
 
-        rows.forEach(row => {
-          const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-          const [id, categoria, nombre, descES, precio, estado, imgURL, etiqueta, tooltip, descEN] = cols;
+// 🔗 URL del CSV público de Google Sheets
+const sheetCSV = 
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv";
 
-          const card = document.createElement("div");
-          card.className = "flex bg-white rounded-lg shadow-md overflow-hidden";
+let datos = [];
 
-          const img = document.createElement("img");
-          img.src = imgURL;
-          img.alt = nombre;
-          img.className = "w-full h-auto max-w-[120px] object-cover rounded-l-2xl cursor-pointer";
-          if (estado.trim().toLowerCase() === "agotado") {
-            img.classList.add("opacity-40", "grayscale");
-          }
+// 🚀 Cargar CSV desde URL del Google Sheets
+fetch(sheetCSV)
+.then(resp => resp.text())
+.then(texto => {
+    const lineas = texto.trim().split("\n");
 
-          // Tooltip
-          img.addEventListener("mouseenter", e => mostrarTooltip(e, tooltip));
-          img.addEventListener("mouseleave", ocultarTooltip);
-          img.addEventListener("touchstart", e => mostrarTooltip(e, tooltip));
-          img.addEventListener("touchend", ocultarTooltip);
+    datos = lineas.map(linea=>{
+        const p = linea.split(",");
+        return {
+            IdCliente:p[0],
+            Nombre:p[1],
+            Apellidos:p[2],
+            Direccion:p[3],
+            Periodo:p[4],
+            FechaPago:p[5],
+            PagoTotal:parseFloat(p[6]||0),
+            Capital:parseFloat(p[7]||0),
+            Intereses:parseFloat(p[8]||0),
+            Seguros:parseFloat(p[9]||0)
+        };
+    });
+})
+.catch(err=>{
+    console.error("Error cargando CSV:",err);
+    document.getElementById("resultado").innerHTML="<p>Error cargando datos.</p>";
+});
 
-          const info = document.createElement("div");
-          info.className = "p-3 flex-1";
-          info.innerHTML = `
-            <h3 class="font-bold">${nombre}</h3>
-            <p class="text-sm text-gray-600">${descES}</p>
-            <p class="text-red-600 font-semibold">$${precio}</p>
-          `;
+// 🔎 Buscar cliente y mostrar
+function buscarCliente(){
+    const id = document.getElementById("clienteId").value.trim();
+    const resultado = document.getElementById("resultado");
+    const pagos = datos.filter(d=>d.IdCliente === id);
 
-          const btn = document.createElement("button");
-          btn.textContent = "Agregar";
-          btn.className = "bg-orange-500 text-white px-3 py-1 rounded-md mt-2";
-          btn.disabled = estado.trim().toLowerCase() === "agotado";
-          btn.onclick = () => agregarCarrito(nombre, precio);
-
-          info.appendChild(btn);
-          card.appendChild(img);
-          card.appendChild(info);
-          document.getElementById("menu").appendChild(card);
-        });
-      } catch (err) {
-        document.getElementById("loading").textContent = "Error al cargar menú.";
-        const retryBtn = document.createElement("button");
-        retryBtn.textContent = "Reintentar";
-        retryBtn.className = "bg-red-500 text-white px-4 py-2 rounded mt-2";
-        retryBtn.onclick = cargarMenu;
-        document.getElementById("menu").appendChild(retryBtn);
-      }
+    if(pagos.length===0){
+        resultado.innerHTML="<p>No se encontró cliente.</p>";
+        return;
     }
 
-    function agregarCarrito(nombre, precio) {
-      carrito.push({ nombre, precio: parseFloat(precio) });
-      total += parseFloat(precio);
-      const totalEl = document.getElementById("total");
-      totalEl.textContent = total.toFixed(2);
-      totalEl.classList.add("pop");
-      setTimeout(() => totalEl.classList.remove("pop"), 300);
-    }
+    const cliente = pagos[0];
+    const totalPagado = pagos.reduce((acc,p)=>acc+p.PagoTotal,0);
+    const totalCapital = pagos.reduce((acc,p)=>acc+p.Capital,0);
+    const totalIntereses = pagos.reduce((acc,p)=>acc+p.Intereses,0);
 
-function mostrarTooltip(e, texto) {
-      if (!texto) return;
-      const tooltip = document.createElement("div");
-      tooltip.className = "tooltip";
-      tooltip.textContent = texto;
-      document.body.appendChild(tooltip);
+    let html=`
+        <div class="resumen">
+            <h3>${cliente.Nombre} ${cliente.Apellidos}</h3>
+            <p><strong>Dirección:</strong> ${cliente.Direccion}</p>
+            <p><strong>Total Pagado:</strong> $${totalPagado.toFixed(2)}</p>
+            <p><strong>Capital:</strong> $${totalCapital.toFixed(2)}</p>
+            <p><strong>Intereses:</strong> $${totalIntereses.toFixed(2)}</p>
+        </div>
+    `;
 
-      const rect = e.target.getBoundingClientRect();
-      let top = rect.top + window.scrollY;
-      let left = rect.right + 10;
-
-      if (left + tooltip.offsetWidth > window.innerWidth) {
-        left = rect.left - tooltip.offsetWidth - 10;
-      }
-      if (top + tooltip.offsetHeight > window.innerHeight) {
-        top = rect.top - tooltip.offsetHeight - 10;
-      }
-
-      tooltip.style.top = top + "px";
-      tooltip.style.left = left + "px";
-      e.target._tooltip = tooltip;
-    }
-
-    function ocultarTooltip(e) {
-      if (e.target._tooltip) {
-        e.target._tooltip.remove();
-        e.target._tooltip = null;
-      }
-    }
-
-    document.getElementById("whatsappBtn").addEventListener("click", () => {
-      if (carrito.length === 0) return alert("Tu carrito está vacío, compa.");
-      const folio = Math.floor(Math.random() * 100000);
-      let mensaje = `*Pedido La Gusguería*\\nFolio: ${folio}\\n\\n`;
-      carrito.forEach(item => {
-        mensaje += `- ${item.nombre}: $${item.precio}\\n`;
-      });
-      mensaje += `\\n*Total: $${total.toFixed(2)}*`;
-
-      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
-      window.open(url, "_blank");
+    pagos.forEach(p=>{
+        html+=`
+        <div class="card">
+            <p><strong>Periodo:</strong> ${p.Periodo}</p>
+            <p><strong>Fecha:</strong> ${p.FechaPago}</p>
+            <p><strong>Pago:</strong> $${p.PagoTotal.toFixed(2)}</p>
+            <p><strong>Capital:</strong> $${p.Capital.toFixed(2)}</p>
+            <p><strong>Intereses:</strong> $${p.Intereses.toFixed(2)}</p>
+            <p><strong>Seguros:</strong> $${p.Seguros.toFixed(2)}</p>
+        </div>
+        `;
     });
 
-    cargarMenu();
-  </script>
+    html+=`<button onclick="descargarPDF('${id}')">Descargar PDF</button>`;
+    resultado.innerHTML=html;
+}
+
+// 💎 Generar PDF estilo banca
+function descargarPDF(id){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const pagos = datos.filter(d=>d.IdCliente===id);
+    const cliente = pagos[0];
+
+    doc.setFontSize(18);
+    doc.text("ESTADO DE CUENTA", 70, 20);
+
+    doc.setFontSize(12);
+    doc.text(`Cliente: ${cliente.Nombre} ${cliente.Apellidos}`, 20, 40);
+    doc.text(`Dirección: ${cliente.Direccion}`, 20, 50);
+
+    let y=70;
+    pagos.forEach(p=>{
+        doc.text(`Periodo: ${p.Periodo}   Fecha: ${p.FechaPago}`,20,y);
+        y+=8;
+        doc.text(`Pago: $${p.PagoTotal.toFixed(2)}  Capital: $${p.Capital.toFixed(2)}`,20,y);
+        y+=8;
+        doc.text(`Intereses: $${p.Intereses.toFixed(2)}  Seguros: $${p.Seguros.toFixed(2)}`,20,y);
+        y+=12;
+    });
+
+    doc.save("EstadoCuenta_"+id+".pdf");
+}
+
+</script>
 </body>
 </html>
