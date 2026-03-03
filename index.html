@@ -2,251 +2,389 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fintech Demo - Estado de Cuenta</title>
+<title>Portal Financiero - Demo</title>
 
-<!-- Librería para generar PDF -->
+<!-- Librerías CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-/* ======== ESTILOS GENERALES ======== */
+/* ===== BLUR DE FONDO ===== */
+.blur-active {
+    filter: blur(4px);
+    transition: filter 0.3s ease;
+}
+
+/* ===== SLIDE PANEL ===== */
+.panel-hidden {
+    transform: translateX(40px);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.panel-visible {
+    transform: translateX(0);
+    opacity: 1;
+    transition: all 0.5s ease;
+}
+
+/* ===== ANIMACION SUAVE AL RENDERIZAR ===== */
+.fade-in {
+    animation: fadeIn 0.6s ease-in-out;
+}
+@keyframes fadeIn {
+    from {opacity:0; transform: translateY(10px);}
+    to {opacity:1; transform: translateY(0);}
+}
+
+/* ===== RESET ===== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial, sans-serif;}
+
 body{
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg,#0f172a,#1e293b);
+    color:#fff;
     display:flex;
     height:100vh;
-    background:#f1f5f9;
 }
 
-#left{
-    width:70%;
+/* ===== MARCA DE AGUA ===== */
+.watermark{
+    position:fixed;
+    top:40%;
+    left:50%;
+    transform:translate(-50%,-50%) rotate(-30deg);
+    font-size:90px;
+    color:rgba(255,255,255,0.05);
+    font-weight:bold;
+    pointer-events:none;
+}
+
+/* ===== LAYOUT ===== */
+.left{
+    width:65%;
     padding:40px;
-    overflow-y:auto;
+    overflow:auto;
 }
 
-#right{
-    width:30%;
+.right{
+    width:35%;
+    background:#0b1220;
     padding:40px;
-    background:#0f172a;
-    color:white;
+    border-left:3px solid #1d4ed8;
 }
 
-h1{margin-top:0;}
+/* ===== CARD ===== */
+.card{
+    background:#1e293b;
+    padding:25px;
+    margin-bottom:20px;
+    border-radius:12px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
 
 input,button{
     width:100%;
     padding:12px;
-    margin-top:10px;
-    margin-bottom:15px;
+    margin-top:15px;
+    border-radius:8px;
     border:none;
-    border-radius:6px;
 }
 
 button{
-    background:#2563eb;
+    background:#1d4ed8;
     color:white;
+    font-weight:bold;
     cursor:pointer;
 }
 
 button:hover{
+    background:#2563eb;
+}
+
+.logo{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:30px;
+    color:#60a5fa;
+}
+
+.small{
+    font-size:13px;
+    color:#cbd5e1;
+}
+
+table{
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+}
+
+th,td{
+    padding:10px;
+    border-bottom:1px solid #334155;
+    text-align:left;
+}
+
+th{
     background:#1d4ed8;
 }
 
-.card{
-    background:white;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+@keyframes pulse {
+    0% {opacity:1;}
+    50% {opacity:0.4;}
+    100% {opacity:1;}
 }
 
-.resumen{
-    background:#e2e8f0;
-    padding:20px;
-    border-radius:10px;
-    margin-bottom:20px;
-}
 </style>
 </head>
-
 <body>
+<div id="appContainer" style="display:flex;width:100%;">
+<div class="watermark">CONFIDENCIAL</div>
 
-<!-- ======== PANEL IZQUIERDO (RESULTADO) ======== -->
-<div id="left">
-    <h1>Estado de Cuenta</h1>
-    <div id="resultado"></div>
+<div class="left" id="contenido">
+	<div id="loader" class="hidden p-8">
+		<div class="animate-pulse space-y-6">
+			<div class="h-6 bg-gray-700 rounded w-1/3"></div>
+			<div class="h-4 bg-gray-700 rounded w-1/2"></div>
+			<div class="h-4 bg-gray-700 rounded w-full"></div>
+			<div class="h-4 bg-gray-700 rounded w-5/6"></div>
+			<div class="h-32 bg-gray-800 rounded"></div>
+		</div>
+	</div>
+	
+    <h2>Consulta tu Estado de Cuenta</h2>
+    <p class="small">Ingresa tu identificación y PIN para visualizar información financiera.</p>
 </div>
 
-<!-- ======== PANEL DERECHO (CONSULTA) ======== -->
-<div id="right">
-    <h2>Consulta Cliente</h2>
+<div class="right">
+	<!-- TOKEN -->
+	<div style="display:flex;align-items:center;margin-bottom:20px;">
+	    <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite;"></div>
+	    <span style="margin-left:8px;font-size:13px;color:#22c55e;font-weight:bold;">
+	        Sesión Segura Activa
+	    </span>
+	    <span id="tokenSesion" style="margin-left:10px;font-size:11px;color:#94a3b8;"></span>
+	</div>
 
-    <label>Ingrese IdCliente:</label>
-    <input type="text" id="clienteId">
+    <div class="logo">FINTECH DEMO</div>
+    <label>Identificación del Cliente</label>
+    <input type="text" id="idCliente">
 
-    <button onclick="buscarCliente()">Consultar</button>
+    <label>PIN de Seguridad</label>
+    <input type="password" id="pin">
+
+	<button id="btnConsultar" onclick="buscarCliente()" disabled>
+		Cargando datos...
+	</button>
 </div>
 
 <script>
 
-/* ===============================
-   CONFIGURACIÓN
-=================================*/
+/* ===== CONFIGURACIÓN ===== */
+const URL_CSV = "TU_URL_CSV_AQUI"; // <-- pega aquí tu link público
+const PIN_VALIDO = "1234"; // PIN demo
 
-// URL pública de tu Google Sheets en formato CSV
-const sheetCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv";
-
-// Aquí se almacenan los datos ya procesados
 let datos = [];
 
-
-/* ===============================
-   FUNCIONES UTILITARIAS
-=================================*/
-
-// 🔐 Decodifica Base64 si aplica
-function decodeBase64Safe(value){
-    try{
-        return atob(value);
-    }catch(e){
-        return value; // si no es base64 válido lo deja igual
-    }
+function generarToken(){
+    return Math.random().toString(36).substring(2,10).toUpperCase();
 }
 
-// 💰 Formatear moneda mexicana
-function formatoMXN(numero){
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'MXN'
-    }).format(numero);
+document.getElementById("tokenSesion").innerText = generarToken();
+
+/* ===== FORMATO MXN ===== */
+function formatoMXN(num){
+    return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(num);
 }
 
+/* ===== CARGAR CSV DINÁMICO ===== */
+const loader = document.getElementById("loader");
+const btn = document.getElementById("btnConsultar");
+const appContainer = document.getElementById("appContainer");
 
-/* ===============================
-   CARGAR DATOS DESDE GOOGLE SHEETS
-=================================*/
+appContainer.classList.add("blur-active");
+loader.classList.remove("hidden");
 
-fetch(sheetCSV)
-.then(resp => resp.text())
-.then(texto => {
-
-    const lineas = texto.trim().split("\n");
-
-    // 🔥 Quitamos encabezados (primera fila)
-    const datosSinHeader = lineas.slice(1);
-
-    datos = datosSinHeader.map(linea => {
-
-        // Limpiar posibles comillas dobles
-        linea = linea.replace(/"/g, "");
-
-        const p = linea.split(",");
-
-        return {
-            IdCliente: decodeBase64Safe(p[0]?.trim()),
-            Nombre: decodeBase64Safe(p[1]?.trim()),
-            Apellidos: decodeBase64Safe(p[2]?.trim()),
-            Direccion: decodeBase64Safe(p[3]?.trim()),
-            Periodo: decodeBase64Safe(p[4]?.trim()),
-            FechaPago: decodeBase64Safe(p[5]?.trim()),
-            PagoTotal: parseFloat(decodeBase64Safe(p[6]?.trim()) || 0),
-            Capital: parseFloat(decodeBase64Safe(p[7]?.trim()) || 0),
-            Intereses: parseFloat(decodeBase64Safe(p[8]?.trim()) || 0),
-            Seguros: parseFloat(decodeBase64Safe(p[9]?.trim()) || 0)
-        };
-
+fetch(URL_CSV)
+.then(res=>res.text())
+.then(text=>{
+    const filas = text.split("\n").slice(1);
+    filas.forEach(f=>{
+        const c = f.split(",");
+        if(c.length>=10){
+            datos.push({
+                IdCliente: atob(c[0]),
+                Nombre: atob(c[1]),
+                Apellidos: atob(c[2]),
+                Direccion: atob(c[3]),
+                Periodo: atob(c[4]),
+                FechaPago: atob(c[5]),
+                PagoTotal: parseFloat(atob(c[6])),
+                Capital: parseFloat(atob(c[7])),
+                Intereses: parseFloat(atob(c[8])),
+                Seguros: parseFloat(atob(c[9]))
+            });
+        }
     });
 
+	appContainer.classList.remove("blur-active");
+	loader.classList.add("hidden");    
+	btn.disabled = false;
+    btn.innerText = "Consultar";
+
 })
-.catch(err=>{
-    document.getElementById("resultado").innerHTML="<p>Error cargando datos.</p>";
+.catch(()=>{
+    appContainer.classList.remove("blur-active"); // 👈 FALTABA ESTO
+    loader.classList.add("hidden");
+    alert("Error cargando datos.");
 });
 
-/* ===============================
-   BUSCAR CLIENTE
-=================================*/
-
+/* ===== BUSCAR CLIENTE ===== */
 function buscarCliente(){
 
-    const id = document.getElementById("clienteId").value.trim();
-    const resultado = document.getElementById("resultado");
+    const id = document.getElementById("idCliente").value.trim();
+    const pin = document.getElementById("pin").value.trim();
 
-    const pagos = datos.filter(d => d.IdCliente === id);
+	if(datos.length === 0){
+		alert("Datos cargando, intenta en unos segundos.");
+		return;
+	}
 
-    if(pagos.length === 0){
-        resultado.innerHTML="<p>No se encontró cliente.</p>";
+    if(pin !== PIN_VALIDO){
+        alert("PIN incorrecto");
+        return;
+    }
+
+    const pagos = datos.filter(d=>d.IdCliente===id);
+
+    if(pagos.length===0){
+        alert("Cliente no encontrado");
         return;
     }
 
     const cliente = pagos[0];
 
-    const totalPagado = pagos.reduce((acc,p)=>acc+p.PagoTotal,0);
-    const totalCapital = pagos.reduce((acc,p)=>acc+p.Capital,0);
-    const totalIntereses = pagos.reduce((acc,p)=>acc+p.Intereses,0);
-
     let html = `
-        <div class="resumen">
-            <h3>${cliente.Nombre} ${cliente.Apellidos}</h3>
-            <p><strong>Dirección:</strong> ${cliente.Direccion}</p>
-            <p><strong>Total Pagado:</strong> ${formatoMXN(totalPagado)}</p>
-            <p><strong>Total Capital:</strong> ${formatoMXN(totalCapital)}</p>
-            <p><strong>Total Intereses:</strong> ${formatoMXN(totalIntereses)}</p>
-        </div>
-    `;
+		<div class="card" style="background:#000;color:#fff;text-align:center;">
+			<h2 style="font-size:22px;">${cliente.Nombre} ${cliente.Apellidos}</h2>
+			<p style="font-size:18px;">Mi mercado es tu casa</p>
+			<div id="qrContainer" style="margin-top:15px;"></div>
+		</div>
+
+		<div class="card">
+			<p><strong>Clave Fundador:</strong> FND-${id}</p>
+			<p><strong>Estatus:</strong> Miembro Fundador Activo</p>
+			<p><strong>Contrato:</strong> CN-${id}</p>
+			<p><strong>Fecha emisión:</strong> ${new Date().toLocaleDateString()}</p>
+		</div>
+
+		<div class="card">
+			<table>
+				<tr>
+					<th>Periodo</th>
+					<th>Fecha</th>
+					<th>Total</th>
+				</tr>
+`;
 
     pagos.forEach(p=>{
-        html += `
-        <div class="card">
-            <p><strong>Periodo:</strong> ${p.Periodo}</p>
-            <p><strong>Fecha:</strong> ${p.FechaPago}</p>
-            <p><strong>Pago:</strong> ${formatoMXN(p.PagoTotal)}</p>
-            <p><strong>Capital:</strong> ${formatoMXN(p.Capital)}</p>
-            <p><strong>Intereses:</strong> ${formatoMXN(p.Intereses)}</p>
-            <p><strong>Seguros:</strong> ${formatoMXN(p.Seguros)}</p>
-        </div>
-        `;
+        html+=`
+        <tr>
+            <td>${p.Periodo}</td>
+            <td>${p.FechaPago}</td>
+            <td>${formatoMXN(p.PagoTotal)}</td>
+        </tr>`;
     });
 
-    html += `<button onclick="descargarPDF('${id}')">Descargar PDF</button>`;
+    html+=`</table>
+    <button onclick="descargarPDF('${id}')">Descargar PDF</button>
+    </div>`;
 
-    resultado.innerHTML = html;
-}
+	const cont = document.getElementById("contenido");
+
+	cont.classList.remove("panel-visible","fade-in");
+	cont.classList.add("panel-hidden");
+
+	setTimeout(()=>{
+		cont.innerHTML = html;
+		cont.scrollTop = 0;
+		cont.classList.remove("panel-hidden");
+		cont.classList.add("panel-visible","fade-in");
+
+// Después de que ya existe el div qrContainer:
+		new QRCode(document.getElementById("qrContainer"), {
+			text: "Documento Demo - Validación Interna FND-"+id,
+			width: 100,
+			height: 100
+		});
+	},150);
 
 
-/* ===============================
-   GENERAR PDF ESTILO BANCARIO
-=================================*/
 
+}  // ← ESTA LLAVE CIERRA buscarCliente()
+
+
+/* ===== PDF PREMIUM ===== */
 function descargarPDF(id){
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const pagos = datos.filter(d=>d.IdCliente===id);
+    const pagos = datos.filter(d=>d.IdCliente.trim() === id);
     const cliente = pagos[0];
 
-    // Título
+    // ===== Encabezado Negro =====
+    doc.setFillColor(0,0,0);
+    doc.rect(0,0,210,30,'F');
+
+    doc.setTextColor(255,255,255);
     doc.setFontSize(18);
-    doc.text("ESTADO DE CUENTA", 70, 20);
+    doc.text(cliente.Nombre+" "+cliente.Apellidos,105,15,{align:"center"});
+    doc.text("Mi mercado es tu casa",105,25,{align:"center"});
 
+    // ===== Marca CONFIDENCIAL =====
+    doc.setTextColor(230,230,230);
+    doc.setFontSize(60);
+    doc.text("CONFIDENCIAL",35,160,{angle:45});
+
+    doc.setTextColor(0,0,0);
     doc.setFontSize(12);
-    doc.text(`Cliente: ${cliente.Nombre} ${cliente.Apellidos}`, 20, 40);
-    doc.text(`Dirección: ${cliente.Direccion}`, 20, 50);
 
-    let y = 70;
+    doc.text("Clave Fundador: FND-"+id,20,50);
+    doc.text("Contrato: CN-"+id,20,60);
+    doc.text("Fecha emisión: "+new Date().toLocaleDateString(),20,70);
+    doc.text("Estatus: Miembro Fundador Activo",20,80);
+
+    let y=100;
 
     pagos.forEach(p=>{
-        doc.text(`Periodo: ${p.Periodo}   Fecha: ${p.FechaPago}`,20,y);
+        doc.text("Periodo: "+p.Periodo+" | Fecha: "+p.FechaPago,20,y);
         y+=8;
-        doc.text(`Pago: ${formatoMXN(p.PagoTotal)}   Capital: ${formatoMXN(p.Capital)}`,20,y);
-        y+=8;
-        doc.text(`Intereses: ${formatoMXN(p.Intereses)}   Seguros: ${formatoMXN(p.Seguros)}`,20,y);
+        doc.text("Total: "+formatoMXN(p.PagoTotal),20,y);
         y+=12;
     });
 
-    doc.save("EstadoCuenta_"+id+".pdf");
-}
+    // ===== QR Premium =====
+    const qrData = "Documento Demo - FND-"+id;
+	const qrDiv = document.createElement("div");
+	new QRCode(qrDiv,{text:qrData,width:100,height:100});
 
+
+	let imgData;
+
+	if(img.tagName === "IMG"){
+		imgData = img.src;
+	} else {
+		imgData = img.toDataURL("image/png");
+	}
+
+    doc.addImage(imgData,"PNG",150,40,40,40);
+
+    doc.save("EstadoCuenta_Fundador_"+id+".pdf");
+}
 </script>
+</div>
+
 </body>
 </html>
