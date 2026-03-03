@@ -182,7 +182,7 @@ th{
 <script>
 
 /* ===== CONFIGURACIÓN ===== */
-const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv"; // <-- pega aquí tu link público
+const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pubhtml"; // <-- pega aquí tu link público
 const PIN_VALIDO = "1234"; // PIN demo
 
 let datos = [];
@@ -243,28 +243,34 @@ fetch(URL_CSV)
 /* ===== BUSCAR CLIENTE ===== */
 function buscarCliente(){
 
-    const id = document.getElementById("idCliente").value.trim();
+    const id = document
+        .getElementById("idCliente")
+        .value
+        .trim()
+        .toUpperCase();
+
     const pin = document.getElementById("pin").value.trim();
 
-	if(datos.length === 0){
-		alert("Datos cargando, intenta en unos segundos.");
-		return;
-	}
+    if(datos.length === 0){
+        alert("Datos cargando, intenta en unos segundos.");
+        return;
+    }
 
     if(pin !== PIN_VALIDO){
         alert("PIN incorrecto");
         return;
     }
 
-    const pagos = datos.filter(d=>d.IdCliente===id);
+    const pagos = datos.filter(d => 
+        d.IdCliente.trim().toUpperCase() === id
+    );
 
-    if(pagos.length===0){
+    if(pagos.length === 0){
         alert("Cliente no encontrado");
         return;
     }
 
     const cliente = pagos[0];
-
     let html = `
 		<div class="card" style="background:#000;color:#fff;text-align:center;">
 			<h2 style="font-size:22px;">${cliente.Nombre} ${cliente.Apellidos}</h2>
