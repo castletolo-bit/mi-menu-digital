@@ -3,52 +3,84 @@
 <head>
 <meta charset="UTF-8">
 <title>Lectura Fintech.csv</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#0f172a; color:#fff; padding:20px; }
+  table { border-collapse: collapse; width:100%; margin-top:20px; }
+  th, td { border:1px solid #334155; padding:8px; text-align:left; }
+  th { background:#1d4ed8; color:#fff; }
+  pre { background:#1e293b; padding:10px; border-radius:8px; overflow:auto; }
+</style>
 </head>
 <body>
 <h2>Lectura de archivo fintech.csv</h2>
-<pre id="salida"></pre>
+<pre id="crudo"></pre>
+<div id="tabla"></div>
 
 <script>
 const URL_CSV = "./data/fintech.csv";
+
+// Función segura para decodificar
+function safeAtob(str){
+  try {
+    return atob(str);
+  } catch(e) {
+    console.error("Error decodificando:", str, e);
+    return str; // devuelve el valor crudo si falla
+  }
+}
 
 fetch(URL_CSV)
   .then(res => res.text())
   .then(text => {
     // Mostrar contenido crudo
-    document.getElementById("salida").textContent = text;
+    document.getElementById("crudo").textContent = text;
     console.log("Contenido crudo del CSV:\n", text);
 
     // Separar filas
     const filas = text.trim().split(/\r?\n/);
     console.log("Filas:", filas);
 
-    // Decodificar cada celda con atob()
+    // Decodificar cada fila
     const datosDecodificados = filas.slice(1).map(fila => {
-      const celdas = fila.split(",");
+      const c = fila.split(",");
       return {
-        IdCliente: atob(celdas[0]),
-        Nombre: atob(celdas[1]),
-        Apellidos: atob(celdas[2]),
-        Direccion: atob(celdas[3]),
-        Periodo: atob(celdas[4]),
-        FechaPago: atob(celdas[5]),
-        PagoTotal: parseFloat(atob(celdas[6])),
-        Capital: parseFloat(atob(celdas[7])),
-        Intereses: parseFloat(atob(celdas[8])),
-        Seguros: parseFloat(atob(celdas[9]))
+        IdCliente: safeAtob(c[0]),
+        Nombre: safeAtob(c[1]),
+        Apellidos: safeAtob(c[2]),
+        Direccion: safeAtob(c[3]),
+        Periodo: safeAtob(c[4]),
+        FechaPago: safeAtob(c[5]),
+        PagoTotal: parseFloat(safeAtob(c[6])),
+        Capital: parseFloat(safeAtob(c[7])),
+        Intereses: parseFloat(safeAtob(c[8])),
+        Seguros: parseFloat(safeAtob(c[9]))
       };
     });
 
     console.log("Datos decodificados:", datosDecodificados);
 
-    // Mostrar en pantalla también
-    document.getElementById("salida").textContent += 
-      "\n\n=== Datos decodificados ===\n" + 
-      JSON.stringify(datosDecodificados, null, 2);
+    // Renderizar tabla
+    let html = "<table><tr><th>ID</th><th>Nombre</th><th>Apellidos</th><th>Dirección</th><th>Periodo</th><th>Fecha Pago</th><th>Total</th><th>Capital</th><th>Intereses</th><th>Seguros</th></tr>";
+    datosDecodificados.forEach(d => {
+      html += `<tr>
+        <td>${d.IdCliente}</td>
+        <td>${d.Nombre}</td>
+        <td>${d.Apellidos}</td>
+        <td>${d.Direccion}</td>
+        <td>${d.Periodo}</td>
+        <td>${d.FechaPago}</td>
+        <td>${d.PagoTotal}</td>
+        <td>${d.Capital}</td>
+        <td>${d.Intereses}</td>
+        <td>${d.Seguros}</td>
+      </tr>`;
+    });
+    html += "</table>";
+    document.getElementById("tabla").innerHTML = html;
   })
   .catch(err => {
     console.error("Error cargando CSV:", err);
-    document.getElementById("salida").textContent = "Error cargando CSV: " + err;
+    document.getElementById("crudo").textContent = "Error cargando CSV: " + err;
   });
 </script>
 </body>
