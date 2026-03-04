@@ -308,10 +308,12 @@ function buscarCliente(){
         return;
     }
 
-    const pagos = datos.filter(d => 
-        d.IdCliente.trim().toUpperCase() === id
-    );
+/* Debug: ver qué IDs hay en datos  */
+    console.log("Buscando ID:", id);
+    console.log("IDs disponibles:", datos.map(d => d.IdCliente));
 
+	const pagos = datos.filter(d => d.IdCliente.trim().toUpperCase() === id);
+    
     if(pagos.length === 0){
         alert("Cliente no encontrado");
         return;
@@ -373,12 +375,8 @@ function buscarCliente(){
 		});
 	},150);
 
-
-
 }  // ← ESTA LLAVE CIERRA buscarCliente()
 
-
-/* ===== PDF PREMIUM ===== */
 /* ===== PDF PREMIUM ===== */
 function descargarPDF(id){
     const { jsPDF } = window.jspdf;
