@@ -12,35 +12,35 @@
 </style>
 </head>
 <body>
-<h2>Lectura de archivo fintech.csv</h2>
+<h2>Lectura de archivo Fintech.csv</h2>
 <pre id="crudo"></pre>
 <div id="tabla"></div>
 
 <script>
 const URL_CSV = "https://castletolo-bit.github.io/mi-menu-digital/data/Fintech.csv";
 
-// Función segura para decodificar
 function safeAtob(str){
   try {
     return atob(str);
   } catch(e) {
     console.error("Error decodificando:", str, e);
-    return str; // devuelve el valor crudo si falla
+    return str;
   }
 }
 
 fetch(URL_CSV)
-  .then(res => res.text())
+  .then(res => {
+    console.log("Estado del fetch:", res.status, res.statusText);
+    return res.text();
+  })
   .then(text => {
-    // Mostrar contenido crudo
+    if (!text.trim()) {
+      console.warn("El CSV está vacío o no se pudo leer.");
+    }
     document.getElementById("crudo").textContent = text;
     console.log("Contenido crudo del CSV:\n", text);
 
-    // Separar filas
     const filas = text.trim().split(/\r?\n/);
-    console.log("Filas:", filas);
-
-    // Decodificar cada fila
     const datosDecodificados = filas.slice(1).map(fila => {
       const c = fila.split(",");
       return {
@@ -59,7 +59,6 @@ fetch(URL_CSV)
 
     console.log("Datos decodificados:", datosDecodificados);
 
-    // Renderizar tabla
     let html = "<table><tr><th>ID</th><th>Nombre</th><th>Apellidos</th><th>Dirección</th><th>Periodo</th><th>Fecha Pago</th><th>Total</th><th>Capital</th><th>Intereses</th><th>Seguros</th></tr>";
     datosDecodificados.forEach(d => {
       html += `<tr>
