@@ -182,8 +182,8 @@ th{
 <script>
 
 /* ===== CONFIGURACIÓN ===== */
-const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?gid=0&single=true&output=csv"; // <-- pega aquí tu link público
-/*const URL_CSV = "./data/fintech.csv"*/
+/* const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pubhtml";*/ // <-- pega aquí tu link público
+const URL_CSV = "./data/fintech.csv"
 const PIN_VALIDO = "1234"; // PIN demo
 
 let datos = [];
@@ -199,7 +199,7 @@ function formatoMXN(num){
     return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(num);
 }
 
-/* ===== CARGAR CSV DINÁMICO ===== */
+/* ===== CARGAR CSV DINÁMICO ===== 
 const loader = document.getElementById("loader");
 const btn = document.getElementById("btnConsultar");
 const appContainer = document.getElementById("appContainer");
@@ -237,6 +237,52 @@ fetch(URL_CSV)
 })
 .catch(()=>{
     appContainer.classList.remove("blur-active"); // 👈 FALTABA ESTO
+    loader.classList.add("hidden");
+    alert("Error cargando datos.");
+});*/
+
+/* ===== CARGAR CSV DINÁMICO ===== */
+const loader = document.getElementById("loader");
+const btn = document.getElementById("btnConsultar");
+const appContainer = document.getElementById("appContainer");
+
+appContainer.classList.add("blur-active");
+loader.classList.remove("hidden");
+
+fetch(URL_CSV)
+.then(res => res.text())
+.then(text => {
+    // Ajuste: soportar saltos de línea \n y \r\n
+    const filas = text.trim().split(/\r?\n/).slice(1);
+
+    filas.forEach(f => {
+        const c = f.split(",");
+        if (c.length >= 10) {
+            datos.push({
+                IdCliente: atob(c[0]),
+                Nombre: atob(c[1]),
+                Apellidos: atob(c[2]),
+                Direccion: atob(c[3]),
+                Periodo: atob(c[4]),
+                FechaPago: atob(c[5]),
+                PagoTotal: parseFloat(atob(c[6])),
+                Capital: parseFloat(atob(c[7])),
+                Intereses: parseFloat(atob(c[8])),
+                Seguros: parseFloat(atob(c[9]))
+            });
+        }
+    });
+
+    // Debug: ver datos cargados en consola
+    console.log("Datos cargados:", datos);
+
+    appContainer.classList.remove("blur-active");
+    loader.classList.add("hidden");
+    btn.disabled = false;
+    btn.innerText = "Consultar";
+})
+.catch(() => {
+    appContainer.classList.remove("blur-active");
     loader.classList.add("hidden");
     alert("Error cargando datos.");
 });
@@ -333,18 +379,17 @@ function buscarCliente(){
 
 
 /* ===== PDF PREMIUM ===== */
+/* ===== PDF PREMIUM ===== */
 function descargarPDF(id){
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const pagos = datos.filter(d=>d.IdCliente.trim() === id);
+    const pagos = datos.filter(d=>d.IdCliente.trim().toUpperCase() === id.toUpperCase());
     const cliente = pagos[0];
 
     // ===== Encabezado Negro =====
     doc.setFillColor(0,0,0);
     doc.rect(0,0,210,30,'F');
-
     doc.setTextColor(255,255,255);
     doc.setFontSize(18);
     doc.text(cliente.Nombre+" "+cliente.Apellidos,105,15,{align:"center"});
@@ -357,14 +402,12 @@ function descargarPDF(id){
 
     doc.setTextColor(0,0,0);
     doc.setFontSize(12);
-
     doc.text("Clave Fundador: FND-"+id,20,50);
     doc.text("Contrato: CN-"+id,20,60);
     doc.text("Fecha emisión: "+new Date().toLocaleDateString(),20,70);
     doc.text("Estatus: Miembro Fundador Activo",20,80);
 
     let y=100;
-
     pagos.forEach(p=>{
         doc.text("Periodo: "+p.Periodo+" | Fecha: "+p.FechaPago,20,y);
         y+=8;
@@ -374,20 +417,14 @@ function descargarPDF(id){
 
     // ===== QR Premium =====
     const qrData = "Documento Demo - FND-"+id;
-	const qrDiv = document.createElement("div");
-	new QRCode(qrDiv,{text:qrData,width:100,height:100});
+    const qrDiv = document.createElement("div");
+    new QRCode(qrDiv,{text:qrData,width:100,height:100});
 
-
-	let imgData;
-
-	if(img.tagName === "IMG"){
-		imgData = img.src;
-	} else {
-		imgData = img.toDataURL("image/png");
-	}
+    // Tomar la imagen generada dentro del div
+    const img = qrDiv.querySelector("img");
+    const imgData = img.src;
 
     doc.addImage(imgData,"PNG",150,40,40,40);
-
     doc.save("EstadoCuenta_Fundador_"+id+".pdf");
 }
 </script>
