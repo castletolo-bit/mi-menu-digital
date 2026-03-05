@@ -1,437 +1,88 @@
 <!DOCTYPE html>
 <html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Portal Financiero - Demo</title>
-
-<!-- Librerías CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-
+<title>Lectura Fintech.csv</title>
 <style>
-/* ===== BLUR DE FONDO ===== */
-.blur-active {
-    filter: blur(4px);
-    transition: filter 0.3s ease;
-}
-
-/* ===== SLIDE PANEL ===== */
-.panel-hidden {
-    transform: translateX(40px);
-    opacity: 0;
-    transition: all 0.3s ease;
-}
-
-.panel-visible {
-    transform: translateX(0);
-    opacity: 1;
-    transition: all 0.5s ease;
-}
-
-/* ===== ANIMACION SUAVE AL RENDERIZAR ===== */
-.fade-in {
-    animation: fadeIn 0.6s ease-in-out;
-}
-@keyframes fadeIn {
-    from {opacity:0; transform: translateY(10px);}
-    to {opacity:1; transform: translateY(0);}
-}
-
-/* ===== RESET ===== */
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial, sans-serif;}
-
-body{
-    background: linear-gradient(135deg,#0f172a,#1e293b);
-    color:#fff;
-    display:flex;
-    height:100vh;
-}
-
-/* ===== MARCA DE AGUA ===== */
-.watermark{
-    position:fixed;
-    top:40%;
-    left:50%;
-    transform:translate(-50%,-50%) rotate(-30deg);
-    font-size:90px;
-    color:rgba(255,255,255,0.05);
-    font-weight:bold;
-    pointer-events:none;
-}
-
-/* ===== LAYOUT ===== */
-.left{
-    width:65%;
-    padding:40px;
-    overflow:auto;
-}
-
-.right{
-    width:35%;
-    background:#0b1220;
-    padding:40px;
-    border-left:3px solid #1d4ed8;
-}
-
-/* ===== CARD ===== */
-.card{
-    background:#1e293b;
-    padding:25px;
-    margin-bottom:20px;
-    border-radius:12px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.4);
-}
-
-input,button{
-    width:100%;
-    padding:12px;
-    margin-top:15px;
-    border-radius:8px;
-    border:none;
-}
-
-button{
-    background:#1d4ed8;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#2563eb;
-}
-
-.logo{
-    font-size:22px;
-    font-weight:bold;
-    margin-bottom:30px;
-    color:#60a5fa;
-}
-
-.small{
-    font-size:13px;
-    color:#cbd5e1;
-}
-
-table{
-    width:100%;
-    margin-top:20px;
-    border-collapse:collapse;
-}
-
-th,td{
-    padding:10px;
-    border-bottom:1px solid #334155;
-    text-align:left;
-}
-
-th{
-    background:#1d4ed8;
-}
-
-@keyframes pulse {
-    0% {opacity:1;}
-    50% {opacity:0.4;}
-    100% {opacity:1;}
-}
-
+  body { font-family: Arial, sans-serif; background:#0f172a; color:#fff; padding:20px; }
+  table { border-collapse: collapse; width:100%; margin-top:20px; }
+  th, td { border:1px solid #334155; padding:8px; text-align:left; }
+  th { background:#1d4ed8; color:#fff; }
+  pre { background:#1e293b; padding:10px; border-radius:8px; overflow:auto; }
 </style>
 </head>
 <body>
-<div id="appContainer" style="display:flex;width:100%;">
-<div class="watermark">CONFIDENCIAL</div>
-
-<div class="left" id="contenido">
-	<div id="loader" class="hidden p-8">
-		<div class="animate-pulse space-y-6">
-			<div class="h-6 bg-gray-700 rounded w-1/3"></div>
-			<div class="h-4 bg-gray-700 rounded w-1/2"></div>
-			<div class="h-4 bg-gray-700 rounded w-full"></div>
-			<div class="h-4 bg-gray-700 rounded w-5/6"></div>
-			<div class="h-32 bg-gray-800 rounded"></div>
-		</div>
-	</div>
-	
-    <h2>Consulta tu Estado de Cuenta</h2>
-    <p class="small">Ingresa tu identificación y PIN para visualizar información financiera.</p>
-</div>
-
-<div class="right">
-	<!-- TOKEN -->
-	<div style="display:flex;align-items:center;margin-bottom:20px;">
-	    <div style="width:10px;height:10px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite;"></div>
-	    <span style="margin-left:8px;font-size:13px;color:#22c55e;font-weight:bold;">
-	        Sesión Segura Activa
-	    </span>
-	    <span id="tokenSesion" style="margin-left:10px;font-size:11px;color:#94a3b8;"></span>
-	</div>
-
-    <div class="logo">FINTECH DEMO</div>
-    <label>Identificación del Cliente</label>
-    <input type="text" id="idCliente">
-
-    <label>PIN de Seguridad</label>
-    <input type="password" id="pin">
-
-	<button id="btnConsultar" onclick="buscarCliente()" disabled>
-		Cargando datos...
-	</button>
-</div>
+<h2>Lectura de archivo Fintech.csv</h2>
+<pre id="crudo"></pre>
+<div id="tabla"></div>
 
 <script>
-
-/* ===== CONFIGURACIÓN ===== */
-/* const URL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQmcCDHBBBmHprpvT85OTTgiLs0TyykUgAyjNyVXAM_q9Zs8uo9cM3ye_3qzUk310HLX2iHGTsNiv8M/pub?output=csv"; // <-- pega aquí tu link público*/
-/* const URL_CSV = "./data/fintech.csv"*/
 const URL_CSV = "https://castletolo-bit.github.io/mi-menu-digital/data/Fintech.csv";
-const PIN_VALIDO = "1234"; // PIN demo
 
-let datos = [];
-
-function generarToken(){
-    return Math.random().toString(36).substring(2,10).toUpperCase();
+function safeAtob(str){
+  try {
+    return atob(str);
+  } catch(e) {
+    console.error("Error decodificando:", str, e);
+    return str;
+  }
 }
-
-document.getElementById("tokenSesion").innerText = generarToken();
-
-/* ===== FORMATO MXN ===== */
-function formatoMXN(num){
-    return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(num);
-}
-
-/* ===== CARGAR CSV DINÁMICO ===== 
-const loader = document.getElementById("loader");
-const btn = document.getElementById("btnConsultar");
-const appContainer = document.getElementById("appContainer");
-
-appContainer.classList.add("blur-active");
-loader.classList.remove("hidden");
 
 fetch(URL_CSV)
-.then(res=>res.text())
-.then(text=>{
-    // Ajuste: soportar saltos de línea \n y \r\n Y BRINCA LA PRIMERA LINEA
-    const filas = text.trim().split(/\r?\n/).slice(1);
- 
-	filas.forEach(f=>{
-        const c = f.split(",");
-        if(c.length>=10){
-            datos.push({
-                IdCliente: atob(c[0]),
-                Nombre: atob(c[1]),
-                Apellidos: atob(c[2]),
-                Direccion: atob(c[3]),
-                Periodo: atob(c[4]),
-                FechaPago: atob(c[5]),
-                PagoTotal: parseFloat(atob(c[6])),
-                Capital: parseFloat(atob(c[7])),
-                Intereses: parseFloat(atob(c[8])),
-                Seguros: parseFloat(atob(c[9]))
-            });
-        }
-    });
-
-    console.log("Datos cargados:", datos); // <- ver en consola
-
-	appContainer.classList.remove("blur-active");
-	loader.classList.add("hidden");    
-	btn.disabled = false;
-    btn.innerText = "Consultar";
-
-})
-.catch(()=>{
-    appContainer.classList.remove("blur-active"); // 👈 FALTABA ESTO
-    loader.classList.add("hidden");
-    alert("Error cargando datos.");
-});*/
-
-/* ===== CARGAR CSV DINÁMICO ===== */
-const loader = document.getElementById("loader");
-const btn = document.getElementById("btnConsultar");
-const appContainer = document.getElementById("appContainer");
-
-appContainer.classList.add("blur-active");
-loader.classList.remove("hidden");
-
-fetch(URL_CSV)
-.then(res => res.text())
-.then(text => {
-    // Ajuste: soportar saltos de línea \n y \r\n
-    const filas = text.trim().split(/\r?\n/).slice(1);
-
-    filas.forEach(f => {
-        const c = f.split(",");
-        if (c.length >= 10) {
-            datos.push({
-                IdCliente: atob(c[0]),
-                Nombre: atob(c[1]),
-                Apellidos: atob(c[2]),
-                Direccion: atob(c[3]),
-                Periodo: atob(c[4]),
-                FechaPago: atob(c[5]),
-                PagoTotal: parseFloat(atob(c[6])),
-                Capital: parseFloat(atob(c[7])),
-                Intereses: parseFloat(atob(c[8])),
-                Seguros: parseFloat(atob(c[9]))
-            });
-        }
-    });
-
-    // Debug: ver datos cargados en consola
-    console.log("Datos cargados:", datos);
-
-    appContainer.classList.remove("blur-active");
-    loader.classList.add("hidden");
-    btn.disabled = false;
-    btn.innerText = "Consultar";
-})
-.catch(() => {
-    appContainer.classList.remove("blur-active");
-    loader.classList.add("hidden");
-    alert("Error cargando datos.");
-});
-
-/* ===== BUSCAR CLIENTE ===== */
-function buscarCliente(){
-
-    const id = document
-        .getElementById("idCliente")
-        .value
-        .trim()
-        .toUpperCase();
-
-    const pin = document.getElementById("pin").value.trim();
-
-    if(datos.length === 0){
-        alert("Datos cargando, intenta en unos segundos.");
-        return;
+  .then(res => {
+    console.log("Estado del fetch:", res.status, res.statusText);
+    return res.text();
+  })
+  .then(text => {
+    if (!text.trim()) {
+      console.warn("El CSV está vacío o no se pudo leer.");
     }
+    document.getElementById("crudo").textContent = text;
+    console.log("Contenido crudo del CSV:\n", text);
 
-    if(pin !== PIN_VALIDO){
-        alert("PIN incorrecto");
-        return;
-    }
-
-/* Debug: ver qué IDs hay en datos  */
-    console.log("Buscando ID:", id);
-    console.log("IDs disponibles:", datos.map(d => d.IdCliente));
-
-	const pagos = datos.filter(d => d.IdCliente.trim().toUpperCase() === id);
-    
-    if(pagos.length === 0){
-        alert("Cliente no encontrado");
-        return;
-    }
-
-    const cliente = pagos[0];
-    let html = `
-		<div class="card" style="background:#000;color:#fff;text-align:center;">
-			<h2 style="font-size:22px;">${cliente.Nombre} ${cliente.Apellidos}</h2>
-			<p style="font-size:18px;">Mi mercado es tu casa</p>
-			<div id="qrContainer" style="margin-top:15px;"></div>
-		</div>
-
-		<div class="card">
-			<p><strong>Clave Fundador:</strong> FND-${id}</p>
-			<p><strong>Estatus:</strong> Miembro Fundador Activo</p>
-			<p><strong>Contrato:</strong> CN-${id}</p>
-			<p><strong>Fecha emisión:</strong> ${new Date().toLocaleDateString()}</p>
-		</div>
-
-		<div class="card">
-			<table>
-				<tr>
-					<th>Periodo</th>
-					<th>Fecha</th>
-					<th>Total</th>
-				</tr>
-`;
-
-    pagos.forEach(p=>{
-        html+=`
-        <tr>
-            <td>${p.Periodo}</td>
-            <td>${p.FechaPago}</td>
-            <td>${formatoMXN(p.PagoTotal)}</td>
-        </tr>`;
+    const filas = text.trim().split(/\r?\n/);
+    const datosDecodificados = filas.slice(1).map(fila => {
+      const c = fila.split(",");
+      return {
+        IdCliente: safeAtob(c[0]),
+        Nombre: safeAtob(c[1]),
+        Apellidos: safeAtob(c[2]),
+        Direccion: safeAtob(c[3]),
+        Periodo: safeAtob(c[4]),
+        FechaPago: safeAtob(c[5]),
+        PagoTotal: parseFloat(safeAtob(c[6])),
+        Capital: parseFloat(safeAtob(c[7])),
+        Intereses: parseFloat(safeAtob(c[8])),
+        Seguros: parseFloat(safeAtob(c[9]))
+      };
     });
 
-    html+=`</table>
-    <button onclick="descargarPDF('${id}')">Descargar PDF</button>
-    </div>`;
+    console.log("Datos decodificados:", datosDecodificados);
 
-	const cont = document.getElementById("contenido");
-
-	cont.classList.remove("panel-visible","fade-in");
-	cont.classList.add("panel-hidden");
-
-	setTimeout(()=>{
-		cont.innerHTML = html;
-		cont.scrollTop = 0;
-		cont.classList.remove("panel-hidden");
-		cont.classList.add("panel-visible","fade-in");
-
-// Después de que ya existe el div qrContainer:
-		new QRCode(document.getElementById("qrContainer"), {
-			text: "Documento Demo - Validación Interna FND-"+id,
-			width: 100,
-			height: 100
-		});
-	},150);
-
-}  // ← ESTA LLAVE CIERRA buscarCliente()
-
-/* ===== PDF PREMIUM ===== */
-function descargarPDF(id){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const pagos = datos.filter(d=>d.IdCliente.trim().toUpperCase() === id.toUpperCase());
-    const cliente = pagos[0];
-
-    // ===== Encabezado Negro =====
-    doc.setFillColor(0,0,0);
-    doc.rect(0,0,210,30,'F');
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(18);
-    doc.text(cliente.Nombre+" "+cliente.Apellidos,105,15,{align:"center"});
-    doc.text("Mi mercado es tu casa",105,25,{align:"center"});
-
-    // ===== Marca CONFIDENCIAL =====
-    doc.setTextColor(230,230,230);
-    doc.setFontSize(60);
-    doc.text("CONFIDENCIAL",35,160,{angle:45});
-
-    doc.setTextColor(0,0,0);
-    doc.setFontSize(12);
-    doc.text("Clave Fundador: FND-"+id,20,50);
-    doc.text("Contrato: CN-"+id,20,60);
-    doc.text("Fecha emisión: "+new Date().toLocaleDateString(),20,70);
-    doc.text("Estatus: Miembro Fundador Activo",20,80);
-
-    let y=100;
-    pagos.forEach(p=>{
-        doc.text("Periodo: "+p.Periodo+" | Fecha: "+p.FechaPago,20,y);
-        y+=8;
-        doc.text("Total: "+formatoMXN(p.PagoTotal),20,y);
-        y+=12;
+    let html = "<table><tr><th>ID</th><th>Nombre</th><th>Apellidos</th><th>Dirección</th><th>Periodo</th><th>Fecha Pago</th><th>Total</th><th>Capital</th><th>Intereses</th><th>Seguros</th></tr>";
+    datosDecodificados.forEach(d => {
+      html += `<tr>
+        <td>${d.IdCliente}</td>
+        <td>${d.Nombre}</td>
+        <td>${d.Apellidos}</td>
+        <td>${d.Direccion}</td>
+        <td>${d.Periodo}</td>
+        <td>${d.FechaPago}</td>
+        <td>${d.PagoTotal}</td>
+        <td>${d.Capital}</td>
+        <td>${d.Intereses}</td>
+        <td>${d.Seguros}</td>
+      </tr>`;
     });
-
-    // ===== QR Premium =====
-    const qrData = "Documento Demo - FND-"+id;
-    const qrDiv = document.createElement("div");
-    new QRCode(qrDiv,{text:qrData,width:100,height:100});
-
-    // Tomar la imagen generada dentro del div
-    const img = qrDiv.querySelector("img");
-    const imgData = img.src;
-
-    doc.addImage(imgData,"PNG",150,40,40,40);
-    doc.save("EstadoCuenta_Fundador_"+id+".pdf");
-}
+    html += "</table>";
+    document.getElementById("tabla").innerHTML = html;
+  })
+  .catch(err => {
+    console.error("Error cargando CSV:", err);
+    document.getElementById("crudo").textContent = "Error cargando CSV: " + err;
+  });
 </script>
-</div>
-
 </body>
 </html>
