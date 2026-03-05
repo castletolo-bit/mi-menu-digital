@@ -384,15 +384,25 @@ function buscarCliente(){
 
 /* ===== PDF PREMIUM ===== */
 function descargarPDF(id){
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    const pagos = datos.filter(d=>d.IdCliente.trim().toUpperCase() === id.toUpperCase());
+    const pagos = datos.filter(d =>
+        d.IdCliente.trim().toUpperCase() === id.toUpperCase()
+    );
+
+    if(pagos.length === 0){
+        alert("No se encontraron datos para generar el PDF.");
+        return;
+    }
+
     const cliente = pagos[0];
 
     // ===== Encabezado Negro =====
     doc.setFillColor(0,0,0);
     doc.rect(0,0,210,30,'F');
+
     doc.setTextColor(255,255,255);
     doc.setFontSize(18);
     doc.text(cliente.Nombre+" "+cliente.Apellidos,105,15,{align:"center"});
@@ -403,6 +413,7 @@ function descargarPDF(id){
     doc.setFontSize(60);
     doc.text("CONFIDENCIAL",35,160,{angle:45});
 
+    // ===== Información =====
     doc.setTextColor(0,0,0);
     doc.setFontSize(12);
     doc.text("Clave Fundador: FND-"+id,20,50);
@@ -410,7 +421,8 @@ function descargarPDF(id){
     doc.text("Fecha emisión: "+new Date().toLocaleDateString(),20,70);
     doc.text("Estatus: Miembro Fundador Activo",20,80);
 
-    let y=100;
+    // ===== Tabla simple =====
+    let y = 100;
     pagos.forEach(p=>{
         doc.text("Periodo: "+p.Periodo+" | Fecha: "+p.FechaPago,20,y);
         y+=8;
@@ -418,17 +430,20 @@ function descargarPDF(id){
         y+=12;
     });
 
-    // ===== QR Premium =====
-    const qrData = "Documento Demo - FND-"+id;
-    const qrDiv = document.createElement("div");
-    new QRCode(qrDiv,{text:qrData,width:100,height:100});
+    // ===== QR directo por API (ESTABLE) =====
+	// ===== QR estable =====
+	const qrURL =
+		"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" +
+		encodeURIComponent("Documento Demo - FND-"+id);
 
-    // Tomar la imagen generada dentro del div
-    const img = qrDiv.querySelector("img");
-    const imgData = img.src;
+	const img = new Image();
+	img.crossOrigin = "Anonymous";
+	img.src = qrURL;
 
-    doc.addImage(imgData,"PNG",150,40,40,40);
-    doc.save("EstadoCuenta_Fundador_"+id+".pdf");
+	img.onload = function() {
+		doc.addImage(img, "PNG", 150, 40, 40, 40);
+		doc.save("EstadoCuenta_Fundador_"+id+".pdf");
+	};
 }
 </script>
 </div>
