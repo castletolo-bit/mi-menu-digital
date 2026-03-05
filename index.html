@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="es">
-<!DOCTYPE html>
-<html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Lectura Fintech.csv</title>
@@ -11,15 +9,25 @@
   th, td { border:1px solid #334155; padding:8px; text-align:left; }
   th { background:#1d4ed8; color:#fff; }
   pre { background:#1e293b; padding:10px; border-radius:8px; overflow:auto; }
+  #buscador { margin-top:20px; }
 </style>
 </head>
 <body>
 <h2>Lectura de archivo Fintech.csv</h2>
+
+<!-- Cuadro de búsqueda -->
+<div id="buscador">
+  <label for="cliente">Código de cliente:</label>
+  <input type="text" id="cliente" placeholder="Ejemplo: CL1">
+  <button onclick="filtrarCliente()">Buscar</button>
+</div>
+
 <pre id="crudo"></pre>
 <div id="tabla"></div>
 
 <script>
 const URL_CSV = "https://castletolo-bit.github.io/mi-menu-digital/data/Fintech.csv";
+let datosDecodificados = []; // aquí guardamos todos los registros
 
 function safeAtob(str){
   try {
@@ -36,53 +44,69 @@ fetch(URL_CSV)
     return res.text();
   })
   .then(text => {
-    if (!text.trim()) {
-      console.warn("El CSV está vacío o no se pudo leer.");
-    }
     document.getElementById("crudo").textContent = text;
     console.log("Contenido crudo del CSV:\n", text);
 
     const filas = text.trim().split(/\r?\n/);
-    const datosDecodificados = filas.slice(1).map(fila => {
+    datosDecodificados = filas.slice(1).map(fila => {
       const c = fila.split(",");
       return {
-        IdCliente: safeAtob(c[0]),
-        Nombre: safeAtob(c[1]),
-        Apellidos: safeAtob(c[2]),
-        Direccion: safeAtob(c[3]),
-        Periodo: safeAtob(c[4]),
-        FechaPago: safeAtob(c[5]),
-        PagoTotal: parseFloat(safeAtob(c[6])),
-        Capital: parseFloat(safeAtob(c[7])),
-        Intereses: parseFloat(safeAtob(c[8])),
-        Seguros: parseFloat(safeAtob(c[9]))
+        IdCliente: safeAtob(c[0] || ""),
+        Nombre: safeAtob(c[1] || ""),
+        Apellidos: safeAtob(c[2] || ""),
+        Direccion: safeAtob(c[3] || ""),
+        Periodo: safeAtob(c[4] || ""),
+        FechaPago: safeAtob(c[5] || ""),
+        PagoTotal: parseFloat(safeAtob(c[6] || "0")),
+        Capital: parseFloat(safeAtob(c[7] || "0")),
+        Intereses: parseFloat(safeAtob(c[8] || "0")),
+        Seguros: parseFloat(safeAtob(c[9] || "0"))
       };
     });
 
     console.log("Datos decodificados:", datosDecodificados);
-
-    let html = "<table><tr><th>ID</th><th>Nombre</th><th>Apellidos</th><th>Dirección</th><th>Periodo</th><th>Fecha Pago</th><th>Total</th><th>Capital</th><th>Intereses</th><th>Seguros</th></tr>";
-    datosDecodificados.forEach(d => {
-      html += `<tr>
-        <td>${d.IdCliente}</td>
-        <td>${d.Nombre}</td>
-        <td>${d.Apellidos}</td>
-        <td>${d.Direccion}</td>
-        <td>${d.Periodo}</td>
-        <td>${d.FechaPago}</td>
-        <td>${d.PagoTotal}</td>
-        <td>${d.Capital}</td>
-        <td>${d.Intereses}</td>
-        <td>${d.Seguros}</td>
-      </tr>`;
-    });
-    html += "</table>";
-    document.getElementById("tabla").innerHTML = html;
+    renderTabla(datosDecodificados); // mostramos todo al inicio
   })
   .catch(err => {
     console.error("Error cargando CSV:", err);
     document.getElementById("crudo").textContent = "Error cargando CSV: " + err;
   });
+
+// Función para renderizar tabla
+function renderTabla(datos){
+  let html = "<table><tr><th>ID</th><th>Nombre</th><th>Apellidos</th><th>Dirección</th><th>Periodo</th><th>Fecha Pago</th><th>Total</th><th>Capital</th><th>Intereses</th><th>Seguros</th></tr>";
+  datos.forEach(d => {
+    html += `<tr>
+      <td>${d.IdCliente}</td>
+      <td>${d.Nombre}</td>
+      <td>${d.Apellidos}</td>
+      <td>${d.Direccion}</td>
+      <td>${d.Periodo}</td>
+      <td>${d.FechaPago}</td>
+      <td>${d.PagoTotal}</td>
+      <td>${d.Capital}</td>
+      <td>${d.Intereses}</td>
+      <td>${d.Seguros}</td>
+    </tr>`;
+  });
+  html += "</table>";
+  document.getElementById("tabla").innerHTML = html;
+}
+
+// Función para filtrar por cliente
+function filtrarCliente(){
+  const codigo = document.getElementById("cliente").value.trim();
+  if(!codigo){
+    renderTabla(datosDecodificados); // si está vacío, mostramos todo
+    return;
+  }
+  const filtrados = datosDecodificados.filter(d => d.IdCliente === codigo);
+  if(filtrados.length === 0){
+    document.getElementById("tabla").innerHTML = "<p>No se encontró información para el cliente " + codigo + "</p>";
+  } else {
+    renderTabla(filtrados);
+  }
+}
 </script>
 </body>
 </html>
